@@ -1,4 +1,5 @@
 export const defaultFont = "Poppins Regular";
+export const defaultFontSize = 48;
 
 export const mapFontsToSource = {
   "Roboto Regular": "https://zocket-image-library.s3.ap-south-1.amazonaws.com/reels/Roboto/Roboto-Regular.ttf",

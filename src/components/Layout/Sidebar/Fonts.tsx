@@ -1,12 +1,13 @@
 import { Box, Input, InputGroup, InputLeftElement, Icon, VStack, chakra, Text, useOutsideClick } from "@chakra-ui/react";
 import { MagnifyingGlassIcon, CheckIcon } from "@heroicons/react/24/solid";
+import { FabricSelectedState } from "@zocket/config/fabric";
 import { fonts } from "@zocket/config/fonts";
 import { Styles } from "@zocket/config/theme";
 import { motion } from "framer-motion";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 
 interface FontSidebarProps {
-  selected?: string;
+  selected?: FabricSelectedState;
   handleChange?: (value: string) => void;
   handleClose?: () => void;
 }
@@ -15,7 +16,7 @@ export default function FontSidebar({ selected, handleChange }: FontSidebarProps
   const [query, setQuery] = useState("");
 
   const list = useMemo(() => {
-    if (!query.length) return selected ? [selected, ...fonts.filter((font) => font !== selected)] : fonts;
+    if (!query.length) return selected ? [selected.details.fontFamily, ...fonts.filter((font) => font !== selected.details.fontFamily)] : fonts;
     return fonts.filter((font) => font.toLowerCase().includes(query.toLowerCase()));
   }, [query]);
 
@@ -35,7 +36,7 @@ export default function FontSidebar({ selected, handleChange }: FontSidebarProps
         {list.map((font) => (
           <FontItem key={font} onClick={() => handleChange?.(font)}>
             <Text>{font}</Text>
-            {selected === font ? <Icon as={CheckIcon} fontSize="xl" /> : null}
+            {selected?.details.fontFamily === font ? <Icon as={CheckIcon} fontSize="xl" /> : null}
           </FontItem>
         ))}
       </VStack>

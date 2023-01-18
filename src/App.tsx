@@ -1,20 +1,12 @@
-import { Box, Button, Flex, HStack, Icon, useDisclosure, useToast } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, useDisclosure, useToast } from "@chakra-ui/react";
 import styled from "@emotion/styled";
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon, ChevronDownIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { GenericHeader, TextHeader } from "@zocket/components/Layout/Header";
 import { FontFamilySidebar } from "@zocket/components/Layout/Sidebar";
-import {
-  FabricCanvas,
-  FabricEvent,
-  FabricSelectedState,
-  FabricStates,
-  FabricTextbox,
-  maxUndoRedoSteps,
-  originalHeight,
-  originalWidth,
-} from "@zocket/config/fabric";
-import { defaultFont } from "@zocket/config/fonts";
+import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/fabric";
+import { defaultFont, defaultFontSize } from "@zocket/config/fonts";
 import { useFabric } from "@zocket/hooks/useFabric";
+import { FabricCanvas, FabricEvent, FabricSelectedState, FabricStates, FabricTextbox } from "@zocket/interfaces/fabric";
 import { addFontFace } from "@zocket/lib/add-font";
 import { fabric as fabricJS } from "fabric";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -54,7 +46,7 @@ export default function App() {
 
   const updateSelectionState = useCallback((event: FabricEvent) => {
     const element = event.selected![0];
-    setSelected({ status: true, type: element.type!, details: element.toObject(["name"]) });
+    setSelected({ status: true, type: element.type!, details: element.toObject(exportedProps) });
   }, []);
 
   const clearSelectionState = useCallback(() => {
@@ -65,23 +57,35 @@ export default function App() {
   const saveCanvasState = useCallback(
     (_: FabricEvent) => {
       if (!canvas.current) return;
-      const state = canvas.current.toJSON(["name"]);
-      if (undoStack.length >= maxUndoRedoSteps) {
-        updateUndoStack((prev) => {
-          const stack = prev.slice(1);
-          return [...stack, state];
-        });
-      } else {
-        updateUndoStack((prev) => [...prev, state]);
-      }
+      const state = canvas.current.toJSON(exportedProps);
       updateRedoStack([]);
+      if (undoStack.length < maxUndoRedoSteps) return updateUndoStack((prev) => [...prev, state]);
+      updateUndoStack((prev) => {
+        const stack = prev.slice(1);
+        return [...stack, state];
+      });
     },
     [undoStack, canvas]
   );
 
+  const handleObjectScaling = useCallback(
+    (event: FabricEvent) => {
+      if (!canvas.current) return;
+      const element = event.target!;
+      if (element.type === "textbox") {
+        const text = element as FabricTextbox;
+        text.set({ fontSize: Math.round(text.fontSize! * element.scaleY!), width: element.width! * element.scaleX!, scaleX: 1, scaleY: 1 });
+      } else {
+        element.set({ height: element.height! * element.scaleY!, width: element.width! * element.scaleX!, scaleX: 1, scaleY: 1 });
+      }
+      setSelected((state) => ({ ...state, details: element }));
+      canvas.current.renderAll();
+    },
+    [canvas]
+  );
+
   const undoCanvasState = useCallback(() => {
     if (!canvas.current || !canUndo) return;
-
     setActionsEnabled(false);
     const stack = [...undoStack];
     const currentState = stack.pop()!;
@@ -143,33 +147,19 @@ export default function App() {
 
   useEffect(() => {
     if (!canvas.current) return;
-
     canvas.current.off();
-
     canvas.current.on("object:modified", saveCanvasState);
-
+    canvas.current.on("object:scaling", handleObjectScaling);
     canvas.current.on("selection:created", updateSelectionState);
-
     canvas.current.on("selection:updated", updateSelectionState);
-
     canvas.current.on("selection:cleared", clearSelectionState);
-
-    return () => {
-      canvas.current?.off();
-    };
   }, [canvas, saveCanvasState, updateSelectionState]);
 
   const onAddText = async () => {
     if (!canvas.current) return;
-
     const { error, name } = await addFontFace(defaultFont);
-
-    if (error) {
-      toast({ title: "Error", description: error, status: "error" });
-    }
-
-    const text = new Textbox("New Text", { name: uuid.v4(), fontFamily: name });
-
+    if (error) toast({ title: "Error", description: error, status: "error" });
+    const text = new Textbox("Text", { name: uuid.v4(), fontFamily: name, fontSize: defaultFontSize });
     canvas.current.add(text);
     canvas.current.viewportCenterObject(text);
     canvas.current.setActiveObject(text);
@@ -179,28 +169,33 @@ export default function App() {
 
   const onTextFontChange = async (value: string) => {
     if (!canvas.current) return;
-
     const { error, name } = await addFontFace(value);
-
     if (error) toast({ title: "Error", description: error, status: "error" });
-
     const text = canvas.current.getActiveObject() as FabricTextbox;
     text.set("fontFamily", name);
-
     canvas.current.fire("object:modified", { target: text });
     canvas.current.requestRenderAll();
+    setSelected((state) => ({ ...state, details: text.toObject(["name"]) }));
+  };
 
+  const onTextFontSizeChange = async (value: string) => {
+    if (!canvas.current) return;
+    const size = value ? parseInt(value, 10) : defaultFontSize;
+    const text = canvas.current.getActiveObject() as FabricTextbox;
+    text.set("fontSize", size);
+    canvas.current.fire("object:modified", { target: text });
+    canvas.current.requestRenderAll();
     setSelected((state) => ({ ...state, details: text.toObject(["name"]) }));
   };
 
   return (
     <Box display="flex">
-      {isFontSidebarOpen ? <FontFamilySidebar selected={selected.details?.fontFamily} handleChange={onTextFontChange} /> : null}
+      {isFontSidebarOpen ? <FontFamilySidebar selected={selected} handleChange={onTextFontChange} /> : null}
       <Layout>
         {selected.type === "none" ? (
           <GenericHeader {...{ onAddText }} />
         ) : selected.type === "textbox" ? (
-          <TextHeader {...{ isFontSidebarOpen, handleFontSidebarToggle, selected }} />
+          <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextFontSizeChange }} />
         ) : null}
         <Main>
           <Box height={containerHeight} width={containerWidth} backgroundColor="#FFFFFF" shadow="sm">
@@ -232,15 +227,6 @@ const Layout = styled.div`
   height: 100vh;
   flex: 1;
   flex-direction: column;
-`;
-
-const Header = styled.header`
-  height: 80px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #dddddd;
-  background-color: #ffffff;
-  display: flex;
-  align-items: center;
 `;
 
 const Footer = styled.footer`
