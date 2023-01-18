@@ -1,13 +1,14 @@
-import { Box, Input, InputGroup, InputLeftElement, Icon, VStack, chakra, Text } from "@chakra-ui/react";
+import { Box, Input, InputGroup, InputLeftElement, Icon, VStack, chakra, Text, useOutsideClick } from "@chakra-ui/react";
 import { MagnifyingGlassIcon, CheckIcon } from "@heroicons/react/24/solid";
 import { fonts } from "@zocket/config/fonts";
 import { Styles } from "@zocket/config/theme";
 import { motion } from "framer-motion";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useMemo, useRef, useState } from "react";
 
 interface FontSidebarProps {
   selected?: string;
   handleChange?: (value: string) => void;
+  handleClose?: () => void;
 }
 
 export default function FontSidebar({ selected, handleChange }: FontSidebarProps) {

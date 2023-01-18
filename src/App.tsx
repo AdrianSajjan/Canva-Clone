@@ -1,16 +1,8 @@
-import { Box, Button, Flex, HStack, Icon, useToast } from "@chakra-ui/react";
+import { Box, Button, Flex, HStack, Icon, useDisclosure, useToast } from "@chakra-ui/react";
 import styled from "@emotion/styled";
-import {
-  ChatBubbleOvalLeftIcon,
-  CloudArrowUpIcon,
-  PaperAirplaneIcon,
-  PhotoIcon,
-  PlayIcon,
-  ChevronDownIcon,
-  ArrowUturnLeftIcon,
-  ArrowUturnRightIcon,
-} from "@heroicons/react/24/solid";
-import FontSidebar from "@zocket/components/Layout/Sidebar/Fonts";
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, ChevronDownIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { GenericHeader, TextHeader } from "@zocket/components/Layout/Header";
+import { FontFamilySidebar } from "@zocket/components/Layout/Sidebar";
 import {
   FabricCanvas,
   FabricEvent,
@@ -34,19 +26,20 @@ export default function App() {
   const toast = useToast({ position: "top-right", isClosable: true, variant: "left-accent" });
 
   const [scale] = useState(0.6);
-  const [fontSidebarOpen, setFontSidebarOpen] = useState(false);
   const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", details: null });
 
   const [actionsEnabled, setActionsEnabled] = useState(true);
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
   const [redoStack, updateRedoStack] = useState<FabricStates>([]);
 
+  const { isOpen: isFontSidebarOpen, onToggle: handleFontSidebarToggle, onClose: handleFontSidebarClose } = useDisclosure();
+
   const canvas = useRef<FabricCanvas>(null);
   const fabric = useFabric({
     ref: canvas,
     state: [...undoStack].pop(),
     callback: () => {
-      setFontSidebarOpen(false);
+      handleFontSidebarClose();
       setSelected({ status: false, type: "none", details: null });
     },
   });
@@ -62,6 +55,11 @@ export default function App() {
   const updateSelectionState = useCallback((event: FabricEvent) => {
     const element = event.selected![0];
     setSelected({ status: true, type: element.type!, details: element.toObject(["name"]) });
+  }, []);
+
+  const clearSelectionState = useCallback(() => {
+    setSelected({ status: false, type: "none", details: null });
+    handleFontSidebarClose();
   }, []);
 
   const saveCanvasState = useCallback(
@@ -154,9 +152,7 @@ export default function App() {
 
     canvas.current.on("selection:updated", updateSelectionState);
 
-    canvas.current.on("selection:cleared", () => {
-      setSelected({ status: false, type: "none", details: null });
-    });
+    canvas.current.on("selection:cleared", clearSelectionState);
 
     return () => {
       canvas.current?.off();
@@ -197,47 +193,15 @@ export default function App() {
     setSelected((state) => ({ ...state, details: text.toObject(["name"]) }));
   };
 
-  const handleFontSidebar = () => setFontSidebarOpen((state) => !state);
-
   return (
     <Box display="flex">
-      {selected.type === "textbox" && fontSidebarOpen ? (
-        <FontSidebar selected={selected.details?.fontFamily} handleChange={onTextFontChange} />
-      ) : null}
+      {isFontSidebarOpen ? <FontFamilySidebar selected={selected.details?.fontFamily} handleChange={onTextFontChange} /> : null}
       <Layout>
-        <Header>
-          {selected.type === "none" ? (
-            <Flex flex={1} alignItems="center" justifyContent="space-between">
-              <Box>
-                <Button onClick={onAddText} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>
-                  Add Text
-                </Button>
-                <Button ml={4} variant="outline" leftIcon={<Icon as={PhotoIcon} fontSize="xl" />}>
-                  Add Image
-                </Button>
-              </Box>
-              <Box ml="auto">
-                <Button colorScheme="blue" variant="outline" leftIcon={<Icon as={CloudArrowUpIcon} fontSize="xl" />}>
-                  Save Changes
-                </Button>
-                <Button ml={4} colorScheme="green" leftIcon={<Icon as={PaperAirplaneIcon} fontSize="xl" />}>
-                  Export Video
-                </Button>
-              </Box>
-            </Flex>
-          ) : selected.type === "textbox" ? (
-            <Button
-              variant="outline"
-              backgroundColor={fontSidebarOpen ? "gray.200" : "white"}
-              rightIcon={<Icon as={ChevronDownIcon} fontSize="l" />}
-              onClick={handleFontSidebar}
-            >
-              {selected.details.fontFamily}
-            </Button>
-          ) : (
-            <Button>Change Image</Button>
-          )}
-        </Header>
+        {selected.type === "none" ? (
+          <GenericHeader {...{ onAddText }} />
+        ) : selected.type === "textbox" ? (
+          <TextHeader {...{ isFontSidebarOpen, handleFontSidebarToggle, selected }} />
+        ) : null}
         <Main>
           <Box height={containerHeight} width={containerWidth} backgroundColor="#FFFFFF" shadow="sm">
             <Box transform={transform} transformOrigin="0 0" height={originalHeight} width={originalWidth}>
