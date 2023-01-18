@@ -1,10 +1,16 @@
 import { fabric as fabricJS } from "fabric";
 import { Ref, useCallback, useImperativeHandle, useRef } from "react";
-import { FabricCanvas, originalHeight, originalWidth } from "@zocket/config/fabric";
+import { FabricCanvas, FabricState, originalHeight, originalWidth } from "@zocket/config/fabric";
 
 const { Canvas } = fabricJS;
 
-export function useFabric(ref: Ref<FabricCanvas>) {
+interface UseFabricProps {
+  ref: Ref<FabricCanvas>;
+  state?: FabricState;
+  callback?: () => void;
+}
+
+export function useFabric({ ref, state, callback }: UseFabricProps) {
   const canvas = useRef<FabricCanvas>(null);
 
   useImperativeHandle(ref, () => {
@@ -14,6 +20,8 @@ export function useFabric(ref: Ref<FabricCanvas>) {
   const fabric = useCallback((element: HTMLCanvasElement) => {
     if (!element) return canvas.current?.dispose();
     canvas.current = new Canvas(element, { width: originalWidth, height: originalHeight, backgroundColor: "#FFFFFF" });
+    if (state) canvas.current.loadFromJSON(state, () => canvas.current!.renderAll());
+    callback?.();
   }, []);
 
   return fabric;

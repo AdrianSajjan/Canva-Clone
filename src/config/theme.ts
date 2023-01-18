@@ -1,7 +1,6 @@
-import { extendTheme } from "@chakra-ui/react";
-import { CSSObject } from "@emotion/react";
+import { extendTheme, SystemStyleObject } from "@chakra-ui/react";
 
-type CreateProps = Record<string, CSSObject>;
+type CreateProps = Record<string, SystemStyleObject>;
 
 export const Styles = {
   create: function <T extends CreateProps>(styles: T): T {
