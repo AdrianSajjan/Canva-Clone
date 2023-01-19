@@ -1,6 +1,7 @@
-import { Box, Button, HStack, Icon, useDisclosure, useToast } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, Input, useDisclosure, useToast } from "@chakra-ui/react";
 import styled from "@emotion/styled";
 import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { ImageHeader } from "@zocket/components/Layout/Header";
 import { GenericHeader, TextHeader } from "@zocket/components/Layout/Header";
 import { FontFamilySidebar } from "@zocket/components/Layout/Sidebar";
 import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/fabric";
@@ -9,10 +10,10 @@ import { useFabric } from "@zocket/hooks/useFabric";
 import { FabricCanvas, FabricEvent, FabricSelectedState, FabricStates, FabricTextbox, TextboxKeys } from "@zocket/interfaces/fabric";
 import { addFontFace } from "@zocket/lib/add-font";
 import { fabric as fabricJS } from "fabric";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as uuid from "uuid";
 
-const { Textbox } = fabricJS;
+const { Textbox, Image } = fabricJS;
 
 export default function App() {
   const toast = useToast({ position: "top-right", isClosable: true, variant: "left-accent" });
@@ -27,6 +28,7 @@ export default function App() {
   const { isOpen: isFontSidebarOpen, onToggle: handleFontSidebarToggle, onClose: handleFontSidebarClose } = useDisclosure();
 
   const canvas = useRef<FabricCanvas>(null);
+  const image = useRef<HTMLInputElement>(null);
   const fabric = useFabric({
     ref: canvas,
     state: [...undoStack].pop(),
@@ -77,10 +79,7 @@ export default function App() {
       if (element.type === "textbox") {
         const text = element as FabricTextbox;
         text.set({ fontSize: Math.round(text.fontSize! * element.scaleY!), width: element.width! * element.scaleX!, scaleX: 1, scaleY: 1 });
-      } else {
-        element.set({ height: element.height! * element.scaleY!, width: element.width! * element.scaleX!, scaleX: 1, scaleY: 1 });
       }
-      setSelected((state) => ({ ...state, details: element }));
       canvas.current.renderAll();
     },
     [canvas]
@@ -157,16 +156,53 @@ export default function App() {
     canvas.current.on("selection:cleared", clearSelectionState);
   }, [canvas, saveCanvasState, updateSelectionState]);
 
+  const onOpenImageExplorer = () => {
+    image.current?.click();
+  };
+
+  const onFileInputClick = (event: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
+    const element = event.target as HTMLInputElement;
+    element.value = "";
+  };
+
+  const handleImageInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const file = event.target.files[0];
+    const url = URL.createObjectURL(file);
+    onAddImage(url);
+  };
+
   const onAddText = async () => {
     if (!canvas.current) return;
     const { error, name } = await addFontFace(defaultFont);
     if (error) toast({ title: "Error", description: error, status: "error" });
-    const text = new Textbox("Text", { name: uuid.v4(), fontFamily: name, fill: "#000000", fontSize: defaultFontSize, centeredRotation: true });
+    const text = new Textbox("Text", { name: uuid.v4(), fontFamily: name, fill: "#000000", fontSize: defaultFontSize });
     canvas.current.add(text);
     canvas.current.viewportCenterObject(text);
     canvas.current.setActiveObject(text);
     canvas.current.fire("object:modified", { target: text });
     canvas.current.requestRenderAll();
+  };
+
+  const onAddImage = (source: string) => {
+    if (!canvas.current) return;
+
+    Image.fromURL(
+      source,
+      (image) => {
+        image.scaleToHeight(500);
+        image.scaleToWidth(500);
+        canvas.current!.add(image);
+        canvas.current!.viewportCenterObject(image);
+        canvas.current!.setActiveObject(image);
+        canvas.current!.fire("object:modified", { target: image });
+        canvas.current!.requestRenderAll();
+      },
+      {
+        name: uuid.v4(),
+        objectCaching: false,
+      }
+    );
   };
 
   const onTextFontChange = async (value: string) => {
@@ -194,14 +230,17 @@ export default function App() {
       {isFontSidebarOpen ? <FontFamilySidebar selected={selected} onClose={handleFontSidebarClose} handleChange={onTextFontChange} /> : null}
       <Layout>
         {selected.type === "none" ? (
-          <GenericHeader {...{ onAddText }} />
+          <GenericHeader {...{ onAddText, onOpenImageExplorer }} />
         ) : selected.type === "textbox" ? (
           <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextPropertyChange }} />
+        ) : selected.type === "image" ? (
+          <ImageHeader {...{ selected }} />
         ) : null}
         <Main>
           <Box height={containerHeight} width={containerWidth} backgroundColor="#FFFFFF" shadow="sm">
             <Box transform={transform} transformOrigin="0 0" height={originalHeight} width={originalWidth}>
               <canvas ref={fabric}></canvas>
+              <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
             </Box>
           </Box>
         </Main>

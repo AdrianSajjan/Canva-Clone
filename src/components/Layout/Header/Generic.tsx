@@ -4,16 +4,17 @@ import { Styles } from "@zocket/config/theme";
 
 interface GenericHeaderProps {
   onAddText?: () => void;
+  onOpenImageExplorer?: () => void;
 }
 
-export default function GenericHeader({ onAddText }: GenericHeaderProps) {
+export default function GenericHeader({ onAddText, onOpenImageExplorer }: GenericHeaderProps) {
   return (
     <Box sx={styles.header}>
       <Box>
         <Button onClick={onAddText} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>
           Add Text
         </Button>
-        <Button ml={4} variant="outline" leftIcon={<Icon as={PhotoIcon} fontSize="xl" />}>
+        <Button ml={4} variant="outline" leftIcon={<Icon as={PhotoIcon} fontSize="xl" />} onClick={onOpenImageExplorer}>
           Add Image
         </Button>
       </Box>
