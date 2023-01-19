@@ -26,7 +26,7 @@ export default function FontSizeInput({ value, handleChange, ...props }: FontSiz
       <Button {...decrement} variant="outline" fontSize="xl" sx={styles.minus}>
         -
       </Button>
-      <Input {...input} rounded="none" width={20} placeholder="- -" textAlign="center" />
+      <Input {...input} px={2} rounded="none" width={20} placeholder="- -" textAlign="center" />
       <Button {...increment} variant="outline" fontSize="xl" sx={styles.plus}>
         +
       </Button>

@@ -4,23 +4,34 @@ import { fonts } from "@zocket/config/fonts";
 import { Styles } from "@zocket/config/theme";
 import { FabricSelectedState } from "@zocket/interfaces/fabric";
 import { motion } from "framer-motion";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 interface FontSidebarProps {
+  isOpen?: boolean;
   selected?: FabricSelectedState;
   handleChange?: (value: string) => void;
   onClose?: () => void;
 }
 
-export default function FontSidebar({ selected, handleChange, onClose }: FontSidebarProps) {
+export default function FontSidebar({ isOpen, selected, handleChange, onClose }: FontSidebarProps) {
   const [query, setQuery] = useState("");
 
+  useEffect(() => {
+    if (isOpen) return;
+    setQuery("");
+  }, [isOpen]);
+
   const list = useMemo(() => {
+    if (!isOpen) return [];
     if (!query.length) return selected ? [selected.details.fontFamily, ...fonts.filter((font) => font !== selected.details.fontFamily)] : fonts;
     return fonts.filter((font) => font.toLowerCase().includes(query.toLowerCase()));
-  }, [query]);
+  }, [query, isOpen]);
 
   const onQueryChange = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
+
+  const handleFontChange = (font: string) => () => handleChange?.(font);
+
+  if (!isOpen) return null;
 
   return (
     <Box as={motion.div} sx={styles.sidebar} height="100vh" width={350}>
@@ -35,7 +46,7 @@ export default function FontSidebar({ selected, handleChange, onClose }: FontSid
       </HStack>
       <VStack spacing={0} pb={4} overflowY="auto">
         {list.map((font) => (
-          <FontItem key={font} onClick={() => handleChange?.(font)}>
+          <FontItem key={font} onClick={handleFontChange(font)}>
             <Text>{font}</Text>
             {selected?.details.fontFamily === font ? <Icon as={CheckIcon} fontSize="xl" /> : null}
           </FontItem>

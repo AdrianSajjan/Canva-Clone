@@ -43,7 +43,7 @@ export function useFabric({ ref, state, callback }: UseFabricProps) {
 
   const fabric = useCallback((element: HTMLCanvasElement) => {
     if (!element) return canvas.current?.dispose();
-    canvas.current = new Canvas(element, { width: originalWidth, height: originalHeight, backgroundColor: "#FFFFFF", selection: false });
+    canvas.current = new Canvas(element, { width: originalWidth, height: originalHeight, selection: false });
     if (state) canvas.current.loadFromJSON(state, () => canvas.current!.renderAll());
     callback?.();
   }, []);

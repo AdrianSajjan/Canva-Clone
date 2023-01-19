@@ -1,4 +1,17 @@
-import { Box, Button, HStack, Icon, Input, useDisclosure, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  HStack,
+  Icon,
+  Input,
+  Slider,
+  SliderFilledTrack,
+  SliderThumb,
+  SliderTrack,
+  Text,
+  useDisclosure,
+  useToast,
+} from "@chakra-ui/react";
 import styled from "@emotion/styled";
 import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { ImageHeader } from "@zocket/components/Layout/Header";
@@ -18,7 +31,7 @@ const { Textbox, Image } = fabricJS;
 export default function App() {
   const toast = useToast({ position: "top-right", isClosable: true, variant: "left-accent" });
 
-  const [scale] = useState(0.6);
+  const [scale, setScale] = useState(0.4);
   const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", details: null });
 
   const [actionsEnabled, setActionsEnabled] = useState(true);
@@ -27,8 +40,9 @@ export default function App() {
 
   const { isOpen: isFontSidebarOpen, onToggle: handleFontSidebarToggle, onClose: handleFontSidebarClose } = useDisclosure();
 
-  const canvas = useRef<FabricCanvas>(null);
   const image = useRef<HTMLInputElement>(null);
+  const canvas = useRef<FabricCanvas>(null);
+
   const fabric = useFabric({
     ref: canvas,
     state: [...undoStack].pop(),
@@ -225,37 +239,53 @@ export default function App() {
     setSelected((state) => ({ ...state, details: text.toObject(exportedProps) }));
   };
 
+  const headerComponentMap = {
+    none: <GenericHeader {...{ onAddText, onOpenImageExplorer }} />,
+    textbox: <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextPropertyChange }} />,
+    image: <ImageHeader {...{ selected }} />,
+  };
+
   return (
     <Box display="flex">
-      {isFontSidebarOpen ? <FontFamilySidebar selected={selected} onClose={handleFontSidebarClose} handleChange={onTextFontChange} /> : null}
+      <FontFamilySidebar selected={selected} onClose={handleFontSidebarClose} handleChange={onTextFontChange} isOpen={isFontSidebarOpen} />
       <Layout>
-        {selected.type === "none" ? (
-          <GenericHeader {...{ onAddText, onOpenImageExplorer }} />
-        ) : selected.type === "textbox" ? (
-          <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextPropertyChange }} />
-        ) : selected.type === "image" ? (
-          <ImageHeader {...{ selected }} />
-        ) : null}
+        {headerComponentMap[selected.type]}
         <Main>
-          <Box height={containerHeight} width={containerWidth} backgroundColor="#FFFFFF" shadow="sm">
-            <Box transform={transform} transformOrigin="0 0" height={originalHeight} width={originalWidth}>
-              <canvas ref={fabric}></canvas>
-              <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
+          <Box flex={1} display="grid" placeItems="center">
+            <Box height={containerHeight} width={containerWidth} shadow="sm" pos="relative">
+              <Video src="/sample-video.mp4" />
+              <Box transform={transform} transformOrigin="0 0" top={0} left={0} height={originalHeight} width={originalWidth} pos="absolute">
+                <canvas ref={fabric}></canvas>
+                <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
+              </Box>
             </Box>
           </Box>
         </Main>
         <Footer>
           <HStack>
             <Button variant="outline" isDisabled={!canUndo} onClick={undoCanvasState} leftIcon={<Icon as={ArrowUturnLeftIcon} />}>
-              Undo State
+              Undo
             </Button>
             <Button variant="outline" isDisabled={!canRedo} onClick={redoCanvasState} rightIcon={<Icon as={ArrowUturnRightIcon} />}>
-              Redo State
+              Redo
             </Button>
           </HStack>
-          <Button ml="auto" variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
-            Preview Video
-          </Button>
+          <HStack ml="auto" spacing={8}>
+            <HStack spacing={4}>
+              <Button variant="ghost" fontWeight={600}>
+                {Math.floor(scale * 100)}%
+              </Button>
+              <Slider value={scale} onChange={setScale} min={0.1} step={0.01} max={2} aria-label="zoom" w={48} defaultValue={30}>
+                <SliderTrack bgColor="#EEEEEE">
+                  <SliderFilledTrack bgColor="#AAAAAA" />
+                </SliderTrack>
+                <SliderThumb bgColor="#000000" />
+              </Slider>
+            </HStack>
+            <Button variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
+              Preview Video
+            </Button>
+          </HStack>
         </Footer>
       </Layout>
     </Box>
@@ -280,7 +310,15 @@ const Footer = styled.footer`
 
 const Main = styled.main`
   flex: 1;
-  overflow: auto;
-  display: grid;
-  place-items: center;
+  display: flex;
+  max-width: 100vw;
+  flex-direction: row;
+`;
+
+const Video = styled.video`
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: #ffffff;
 `;

@@ -19,7 +19,7 @@ export default function FontColorPicker({ value, onChange, ...props }: FontColor
         <Text fontSize="2xl" lineHeight={1.1}>
           A
         </Text>
-        <Box width="100%" height="5px" bgColor={value} rounded="full" />
+        <Box width="100%" height="5px" bgColor={value} rounded="full" border="1px" />
       </Button>
       <Input type="color" value={value} onChange={handleChange} pos="absolute" top={0} left={0} opacity={0} ref={ref} pointerEvents="none" />
     </Box>
