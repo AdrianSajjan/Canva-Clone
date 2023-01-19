@@ -16,9 +16,11 @@ Textbox.prototype.controls.mtr = new Control({
   actionHandler: mtr.actionHandler,
   cursorStyle: "url(/rotate-cursor.svg) 8 8, auto",
   actionName: "rotate",
-  withConnection: false,
+  withConnection: true,
 });
 
+Object.prototype.originX = "center";
+Object.prototype.originY = "center";
 Object.prototype.transparentCorners = false;
 Object.prototype.padding = 16;
 Object.prototype.cornerSize = 16;

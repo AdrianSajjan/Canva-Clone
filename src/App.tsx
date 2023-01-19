@@ -6,7 +6,7 @@ import { FontFamilySidebar } from "@zocket/components/Layout/Sidebar";
 import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/fabric";
 import { defaultFont, defaultFontSize } from "@zocket/config/fonts";
 import { useFabric } from "@zocket/hooks/useFabric";
-import { FabricCanvas, FabricEvent, FabricSelectedState, FabricStates, FabricTextbox } from "@zocket/interfaces/fabric";
+import { FabricCanvas, FabricEvent, FabricSelectedState, FabricStates, FabricTextbox, TextboxKeys } from "@zocket/interfaces/fabric";
 import { addFontFace } from "@zocket/lib/add-font";
 import { fabric as fabricJS } from "fabric";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -57,8 +57,10 @@ export default function App() {
   const saveCanvasState = useCallback(
     (_: FabricEvent) => {
       if (!canvas.current) return;
-      const state = canvas.current.toJSON(exportedProps);
       updateRedoStack([]);
+      const state = canvas.current.toJSON(exportedProps);
+      const element = canvas.current.getActiveObject();
+      if (element) setSelected((state) => ({ ...state, details: element.toObject(exportedProps) }));
       if (undoStack.length < maxUndoRedoSteps) return updateUndoStack((prev) => [...prev, state]);
       updateUndoStack((prev) => {
         const stack = prev.slice(1);
@@ -159,7 +161,7 @@ export default function App() {
     if (!canvas.current) return;
     const { error, name } = await addFontFace(defaultFont);
     if (error) toast({ title: "Error", description: error, status: "error" });
-    const text = new Textbox("Text", { name: uuid.v4(), fontFamily: name, fontSize: defaultFontSize });
+    const text = new Textbox("Text", { name: uuid.v4(), fontFamily: name, fill: "#000000", fontSize: defaultFontSize, centeredRotation: true });
     canvas.current.add(text);
     canvas.current.viewportCenterObject(text);
     canvas.current.setActiveObject(text);
@@ -175,27 +177,26 @@ export default function App() {
     text.set("fontFamily", name);
     canvas.current.fire("object:modified", { target: text });
     canvas.current.requestRenderAll();
-    setSelected((state) => ({ ...state, details: text.toObject(["name"]) }));
+    setSelected((state) => ({ ...state, details: text.toObject(exportedProps) }));
   };
 
-  const onTextFontSizeChange = async (value: string) => {
+  const onTextPropertyChange = (property: TextboxKeys) => (value: any) => {
     if (!canvas.current) return;
-    const size = value ? parseInt(value, 10) : defaultFontSize;
     const text = canvas.current.getActiveObject() as FabricTextbox;
-    text.set("fontSize", size);
+    text.set(property, value);
     canvas.current.fire("object:modified", { target: text });
     canvas.current.requestRenderAll();
-    setSelected((state) => ({ ...state, details: text.toObject(["name"]) }));
+    setSelected((state) => ({ ...state, details: text.toObject(exportedProps) }));
   };
 
   return (
     <Box display="flex">
-      {isFontSidebarOpen ? <FontFamilySidebar selected={selected} handleChange={onTextFontChange} /> : null}
+      {isFontSidebarOpen ? <FontFamilySidebar selected={selected} onClose={handleFontSidebarClose} handleChange={onTextFontChange} /> : null}
       <Layout>
         {selected.type === "none" ? (
           <GenericHeader {...{ onAddText }} />
         ) : selected.type === "textbox" ? (
-          <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextFontSizeChange }} />
+          <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextPropertyChange }} />
         ) : null}
         <Main>
           <Box height={containerHeight} width={containerWidth} backgroundColor="#FFFFFF" shadow="sm">

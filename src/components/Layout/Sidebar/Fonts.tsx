@@ -1,18 +1,18 @@
-import { Box, Input, InputGroup, InputLeftElement, Icon, VStack, chakra, Text, useOutsideClick } from "@chakra-ui/react";
-import { MagnifyingGlassIcon, CheckIcon } from "@heroicons/react/24/solid";
-import { FabricSelectedState } from "@zocket/config/fabric";
+import { Box, chakra, HStack, Icon, IconButton, Input, InputGroup, InputLeftElement, Text, VStack } from "@chakra-ui/react";
+import { CheckIcon, MagnifyingGlassIcon, ArrowLeftOnRectangleIcon } from "@heroicons/react/24/solid";
 import { fonts } from "@zocket/config/fonts";
 import { Styles } from "@zocket/config/theme";
+import { FabricSelectedState } from "@zocket/interfaces/fabric";
 import { motion } from "framer-motion";
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useMemo, useState } from "react";
 
 interface FontSidebarProps {
   selected?: FabricSelectedState;
   handleChange?: (value: string) => void;
-  handleClose?: () => void;
+  onClose?: () => void;
 }
 
-export default function FontSidebar({ selected, handleChange }: FontSidebarProps) {
+export default function FontSidebar({ selected, handleChange, onClose }: FontSidebarProps) {
   const [query, setQuery] = useState("");
 
   const list = useMemo(() => {
@@ -24,14 +24,15 @@ export default function FontSidebar({ selected, handleChange }: FontSidebarProps
 
   return (
     <Box as={motion.div} sx={styles.sidebar} height="100vh" width={350}>
-      <Box p={4}>
+      <HStack p={4} spacing={4}>
         <InputGroup>
           <InputLeftElement pointerEvents="none">
             <Icon as={MagnifyingGlassIcon} fontSize="xl" mt={1.5} ml={1} />
           </InputLeftElement>
-          <Input value={query} onChange={onQueryChange} size="lg" placeholder="Try 'Poppins' or 'Open Sans'" fontSize="md" />
+          <Input value={query} onChange={onQueryChange} size="lg" placeholder="Try 'Poppins' or 'Lato'" fontSize="md" />
         </InputGroup>
-      </Box>
+        <IconButton aria-label="Close Sidebar" variant="ghost" icon={<Icon as={ArrowLeftOnRectangleIcon} fontSize="2xl" />} onClick={onClose} />
+      </HStack>
       <VStack spacing={0} pb={4} overflowY="auto">
         {list.map((font) => (
           <FontItem key={font} onClick={() => handleChange?.(font)}>
