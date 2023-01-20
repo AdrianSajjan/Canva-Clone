@@ -20,6 +20,9 @@ export const theme = extendTheme({
         scrollBehavior: "smooth",
         backgroundColor: "gray.200",
       },
+      "textarea[data-fabric-hiddentextarea]": {
+        position: "fixed !important",
+      },
       "::-webkit-scrollbar": {
         width: 2,
         height: 2,

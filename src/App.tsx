@@ -1,22 +1,9 @@
-import {
-  Box,
-  Button,
-  HStack,
-  Icon,
-  Input,
-  Slider,
-  SliderFilledTrack,
-  SliderThumb,
-  SliderTrack,
-  Text,
-  useDisclosure,
-  useToast,
-} from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, Input, Slider, SliderFilledTrack, SliderThumb, SliderTrack, useDisclosure, useToast } from "@chakra-ui/react";
 import styled from "@emotion/styled";
 import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PlayIcon } from "@heroicons/react/24/solid";
-import { ImageHeader } from "@zocket/components/Layout/Header";
-import { GenericHeader, TextHeader } from "@zocket/components/Layout/Header";
-import { FontFamilySidebar } from "@zocket/components/Layout/Sidebar";
+import { GenericHeader, ImageHeader, TextHeader } from "@zocket/components/Layout/Header";
+import { Main } from "@zocket/components/Layout/Main";
+import { FontFamilySidebar, PropertySidebar, AnimationSidebar } from "@zocket/components/Layout/Sidebar";
 import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/fabric";
 import { defaultFont, defaultFontSize } from "@zocket/config/fonts";
 import { useFabric } from "@zocket/hooks/useFabric";
@@ -38,7 +25,9 @@ export default function App() {
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
   const [redoStack, updateRedoStack] = useState<FabricStates>([]);
 
-  const { isOpen: isFontSidebarOpen, onToggle: handleFontSidebarToggle, onClose: handleFontSidebarClose } = useDisclosure();
+  const { isOpen: isFontSidebarOpen, onToggle: onFontSidebarToggle, onClose: onFontSidebarClose } = useDisclosure();
+  const { isOpen: isPropertySidebarOpen, onToggle: onPropertySidebarToggle, onClose: onPropertySidebarClose } = useDisclosure();
+  const { isOpen: isAnimationSidebarOpen, onToggle: onAnimationSidebarToggle, onClose: onAnimationSidebarClose } = useDisclosure();
 
   const image = useRef<HTMLInputElement>(null);
   const canvas = useRef<FabricCanvas>(null);
@@ -47,7 +36,7 @@ export default function App() {
     ref: canvas,
     state: [...undoStack].pop(),
     callback: () => {
-      handleFontSidebarClose();
+      onFontSidebarClose();
       setSelected({ status: false, type: "none", details: null });
     },
   });
@@ -67,7 +56,7 @@ export default function App() {
 
   const clearSelectionState = useCallback(() => {
     setSelected({ status: false, type: "none", details: null });
-    handleFontSidebarClose();
+    onFontSidebarClose();
   }, []);
 
   const saveCanvasState = useCallback(
@@ -241,37 +230,43 @@ export default function App() {
 
   const headerComponentMap = {
     none: <GenericHeader {...{ onAddText, onOpenImageExplorer }} />,
-    textbox: <TextHeader {...{ selected, isFontSidebarOpen, handleFontSidebarToggle, onTextPropertyChange }} />,
-    image: <ImageHeader {...{ selected }} />,
+    textbox: (
+      <TextHeader
+        {...{ selected, isFontSidebarOpen, onFontSidebarToggle, onTextPropertyChange, onPropertySidebarToggle, onAnimationSidebarToggle }}
+      />
+    ),
+    image: <ImageHeader {...{ selected, onPropertySidebarToggle }} />,
   };
 
   return (
     <Box display="flex">
-      <FontFamilySidebar selected={selected} onClose={handleFontSidebarClose} handleChange={onTextFontChange} isOpen={isFontSidebarOpen} />
+      <FontFamilySidebar selected={selected} onClose={onFontSidebarClose} handleChange={onTextFontChange} isOpen={isFontSidebarOpen} />
       <Layout>
         {headerComponentMap[selected.type]}
-        <Main>
-          <Box flex={1} display="grid" placeItems="center">
+        <Main isCollapsed={isFontSidebarOpen}>
+          <MainContainer>
             <Box height={containerHeight} width={containerWidth} shadow="sm" pos="relative">
               <Video src="/sample-video.mp4" />
-              <Box transform={transform} transformOrigin="0 0" top={0} left={0} height={originalHeight} width={originalWidth} pos="absolute">
-                <canvas ref={fabric}></canvas>
+              <CanvasContainer transform={transform}>
+                <canvas ref={fabric} />
                 <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
-              </Box>
+              </CanvasContainer>
             </Box>
-          </Box>
+          </MainContainer>
+          <PropertySidebar
+            canvas={canvas.current}
+            isOpen={isPropertySidebarOpen}
+            onClose={onPropertySidebarClose}
+            {...{ selected, onTextPropertyChange }}
+          />
+          <AnimationSidebar canvas={canvas.current} isOpen={isAnimationSidebarOpen} onClose={onAnimationSidebarClose} {...{ selected }} />
         </Main>
         <Footer>
-          <HStack>
-            <Button variant="outline" isDisabled={!canUndo} onClick={undoCanvasState} leftIcon={<Icon as={ArrowUturnLeftIcon} />}>
-              Undo
-            </Button>
-            <Button variant="outline" isDisabled={!canRedo} onClick={redoCanvasState} rightIcon={<Icon as={ArrowUturnRightIcon} />}>
-              Redo
-            </Button>
-          </HStack>
-          <HStack ml="auto" spacing={8}>
-            <HStack spacing={4}>
+          <Button variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
+            Preview Video
+          </Button>
+          <HStack ml="auto">
+            <HStack spacing={2} mr={8}>
               <Button variant="ghost" fontWeight={600}>
                 {Math.floor(scale * 100)}%
               </Button>
@@ -282,8 +277,11 @@ export default function App() {
                 <SliderThumb bgColor="#000000" />
               </Slider>
             </HStack>
-            <Button variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
-              Preview Video
+            <Button variant="outline" isDisabled={!canUndo} onClick={undoCanvasState} leftIcon={<Icon as={ArrowUturnLeftIcon} />}>
+              Undo
+            </Button>
+            <Button variant="outline" isDisabled={!canRedo} onClick={redoCanvasState} rightIcon={<Icon as={ArrowUturnRightIcon} />}>
+              Redo
             </Button>
           </HStack>
         </Footer>
@@ -291,6 +289,23 @@ export default function App() {
     </Box>
   );
 }
+
+const MainContainer = styled(Box)`
+  flex: 1;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  max-height: calc(100vh - 144px);
+`;
+
+const CanvasContainer = styled(Box)`
+  transform-origin: 0 0;
+  top: 0;
+  left: 0;
+  position: absolute;
+  height: ${originalHeight}px;
+  width: ${originalWidth}px;
+`;
 
 const Layout = styled.div`
   display: flex;
@@ -306,13 +321,6 @@ const Footer = styled.footer`
   align-items: center;
   border-top: 1px solid #dddddd;
   background-color: #ffffff;
-`;
-
-const Main = styled.main`
-  flex: 1;
-  display: flex;
-  max-width: 100vw;
-  flex-direction: row;
 `;
 
 const Video = styled.video`

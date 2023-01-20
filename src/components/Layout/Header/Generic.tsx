@@ -1,5 +1,6 @@
 import { Box, Button, Icon } from "@chakra-ui/react";
 import { ChatBubbleOvalLeftIcon, CloudArrowUpIcon, PaperAirplaneIcon, PhotoIcon } from "@heroicons/react/24/solid";
+import { Header } from "@zocket/components/Layout/Header";
 import { Styles } from "@zocket/config/theme";
 
 interface GenericHeaderProps {
@@ -9,7 +10,7 @@ interface GenericHeaderProps {
 
 export default function GenericHeader({ onAddText, onOpenImageExplorer }: GenericHeaderProps) {
   return (
-    <Box sx={styles.header}>
+    <Header>
       <Box>
         <Button onClick={onAddText} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>
           Add Text
@@ -26,20 +27,6 @@ export default function GenericHeader({ onAddText, onOpenImageExplorer }: Generi
           Export Video
         </Button>
       </Box>
-    </Box>
+    </Header>
   );
 }
-
-const styles = Styles.create({
-  header: {
-    height: 20,
-    paddingY: 3,
-    paddingX: 4,
-    borderBottomWidth: 1,
-    borderBottomStyle: "solid",
-    borderBottomColor: "#dddddd",
-    backgroundColor: "#ffffff",
-    display: "flex",
-    alignItems: "center",
-  },
-});

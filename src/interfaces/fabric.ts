@@ -11,6 +11,7 @@ export type FabricObject = fabric.Object;
 export type FabricTextbox = fabric.Textbox;
 
 export type TextboxKeys = keyof fabric.Textbox;
+export type ObjectKeys = keyof fabric.Object;
 
 export interface FabricSelectedState {
   status: boolean;

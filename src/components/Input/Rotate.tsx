@@ -12,8 +12,11 @@ export default function RotateInput({ value, handleChange, ...props }: RotateInp
     step: 15.0,
     min: -360,
     max: 360,
-    value: value + "°",
-    onChange: (value) => (value.replace("°", "").length ? handleChange?.(parseFloat(value.replace("°", ""))) : 0),
+    value: value,
+    onChange: (v) => {
+      if (!v.length || v == value) return;
+      handleChange?.(parseFloat(v));
+    },
   });
 
   const increment = getIncrementButtonProps();
@@ -29,7 +32,7 @@ export default function RotateInput({ value, handleChange, ...props }: RotateInp
         aria-label="Rotate Left"
         sx={styles.minus}
       />
-      <Input {...input} px={2} rounded="none" width={20} placeholder="- -" textAlign="center" />
+      <Input {...input} px={2} rounded="none" placeholder="- -" textAlign="center" />
       <IconButton
         {...increment}
         icon={<img src="https://cdn-icons-png.flaticon.com/512/33/33811.png" height={16} width={16} />}
