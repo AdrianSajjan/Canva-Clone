@@ -1,5 +1,5 @@
 import { Box, Button, Icon } from "@chakra-ui/react";
-import { ChatBubbleOvalLeftIcon, CloudArrowUpIcon, PaperAirplaneIcon, PhotoIcon } from "@heroicons/react/24/solid";
+import { ChatBubbleOvalLeftIcon, CloudArrowUpIcon, DocumentChartBarIcon, PaperAirplaneIcon, PhotoIcon } from "@heroicons/react/24/solid";
 import { Header } from "@zocket/components/Layout/Header";
 import { Styles } from "@zocket/config/theme";
 
@@ -12,7 +12,10 @@ export default function GenericHeader({ onAddText, onOpenImageExplorer }: Generi
   return (
     <Header>
       <Box>
-        <Button onClick={onAddText} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>
+        <Button variant="outline" leftIcon={<Icon as={DocumentChartBarIcon} fontSize="xl" />}>
+          Select Template
+        </Button>
+        <Button onClick={onAddText} ml={4} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>
           Add Text
         </Button>
         <Button ml={4} variant="outline" leftIcon={<Icon as={PhotoIcon} fontSize="xl" />} onClick={onOpenImageExplorer}>

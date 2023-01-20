@@ -19,8 +19,6 @@ Textbox.prototype.controls.mtr = new Control({
   withConnection: true,
 });
 
-Object.prototype.originX = "center";
-Object.prototype.originY = "center";
 Object.prototype.transparentCorners = false;
 Object.prototype.padding = 16;
 Object.prototype.cornerSize = 16;

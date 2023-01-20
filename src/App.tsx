@@ -235,7 +235,7 @@ export default function App() {
         {...{ selected, isFontSidebarOpen, onFontSidebarToggle, onTextPropertyChange, onPropertySidebarToggle, onAnimationSidebarToggle }}
       />
     ),
-    image: <ImageHeader {...{ selected, onPropertySidebarToggle }} />,
+    image: <ImageHeader {...{ selected, onPropertySidebarToggle, onAnimationSidebarToggle }} />,
   };
 
   return (

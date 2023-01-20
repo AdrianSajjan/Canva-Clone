@@ -57,12 +57,12 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
         </Text>
         <VStack spacing={4} mt={2} alignItems="stretch">
           <InputGroup>
-            <InputLeftAddon>Pos X</InputLeftAddon>
+            <InputLeftAddon>X</InputLeftAddon>
             <Input textAlign="center" value={selected.details.left} onChange={handlePropertyChange("left")} />
             <InputRightAddon>px</InputRightAddon>
           </InputGroup>
           <InputGroup>
-            <InputLeftAddon>Pos Y</InputLeftAddon>
+            <InputLeftAddon>Y</InputLeftAddon>
             <Input textAlign="center" value={selected.details.top} onChange={handlePropertyChange("top")} />
             <InputRightAddon>px</InputRightAddon>
           </InputGroup>
@@ -74,13 +74,30 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
         </Text>
         <VStack spacing={4} mt={2} alignItems="stretch">
           <InputGroup>
-            <InputLeftAddon>Width</InputLeftAddon>
+            <InputLeftAddon>W</InputLeftAddon>
             <Input textAlign="center" value={selected.details.width} onChange={handlePropertyChange("width")} />
             <InputRightAddon>px</InputRightAddon>
           </InputGroup>
           <InputGroup>
-            <InputLeftAddon>Height</InputLeftAddon>
+            <InputLeftAddon>H</InputLeftAddon>
             <Input textAlign="center" value={selected.details.height} onChange={handlePropertyChange("height")} />
+            <InputRightAddon>px</InputRightAddon>
+          </InputGroup>
+        </VStack>
+      </Box>
+      <Box mt={6}>
+        <Text textAlign="center" fontWeight="600">
+          Scale
+        </Text>
+        <VStack spacing={4} mt={2} alignItems="stretch">
+          <InputGroup>
+            <InputLeftAddon>X</InputLeftAddon>
+            <Input textAlign="center" value={selected.details.scaleX} onChange={handlePropertyChange("scaleX")} />
+            <InputRightAddon>px</InputRightAddon>
+          </InputGroup>
+          <InputGroup>
+            <InputLeftAddon>Y</InputLeftAddon>
+            <Input textAlign="center" value={selected.details.scaleY} onChange={handlePropertyChange("scaleY")} />
             <InputRightAddon>px</InputRightAddon>
           </InputGroup>
         </VStack>
