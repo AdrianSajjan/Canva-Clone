@@ -1,33 +1,71 @@
-import { Button, HStack, Input, SpaceProps, SystemStyleObject, useNumberInput } from "@chakra-ui/react";
-import { defaultFontSize } from "@zocket/config/fonts";
+import { Button, HStack, Input, SpaceProps, SystemStyleObject } from "@chakra-ui/react";
 import { Styles } from "@zocket/config/theme";
+import { ChangeEvent, KeyboardEvent, useEffect, useState } from "react";
 
 interface FontSizeInputProps extends SpaceProps {
   sx?: SystemStyleObject;
-  value?: string;
-  handleChange?: (value: number) => void;
+  value: string;
+  onChange: (value: number) => void;
 }
 
-export default function FontSizeInput({ value, handleChange, ...props }: FontSizeInputProps) {
-  const { getInputProps, getIncrementButtonProps, getDecrementButtonProps } = useNumberInput({
-    step: 1,
-    min: 1,
-    max: 1000,
-    value,
-    onChange: (value) => handleChange?.(value ? parseInt(value, 10) : defaultFontSize),
-  });
+const step = 1;
+const min = 1;
+const max = Number.MAX_SAFE_INTEGER;
 
-  const increment = getIncrementButtonProps();
-  const decrement = getDecrementButtonProps();
-  const input = getInputProps();
+export default function FontSizeInput({ value, onChange, ...props }: FontSizeInputProps) {
+  const [fontSize, setFontSize] = useState(value);
 
+  useEffect(() => {
+    if (value === fontSize) return;
+    setFontSize(value);
+  }, [value]);
+
+  const handleIncrease = () => {
+    const next = (fontSize ? parseFloat(fontSize) : 0) + step;
+    if (next > max) onChange(max);
+    else onChange(next);
+  };
+
+  const handleDecrease = () => {
+    const next = (fontSize ? parseFloat(fontSize) : 0) - step;
+    if (next < min) onChange(min);
+    else onChange(next);
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setFontSize(event.target.value);
+  };
+
+  const handleBlur = () => {
+    if (fontSize) {
+      onChange(parseFloat(fontSize));
+    } else {
+      setFontSize(value);
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Enter") return;
+    handleBlur();
+    event.preventDefault();
+  };
   return (
     <HStack spacing={0} {...props}>
-      <Button {...decrement} variant="outline" fontSize="xl" sx={styles.minus}>
+      <Button onClick={handleDecrease} isDisabled={parseFloat(fontSize) <= min} variant="outline" fontSize="xl" sx={styles.minus}>
         -
       </Button>
-      <Input {...input} px={2} rounded="none" width={20} placeholder="- -" textAlign="center" />
-      <Button {...increment} variant="outline" fontSize="xl" sx={styles.plus}>
+      <Input
+        value={fontSize}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        px={2}
+        rounded="none"
+        width={20}
+        placeholder="- -"
+        textAlign="center"
+      />
+      <Button onClick={handleIncrease} isDisabled={parseFloat(fontSize) >= max} variant="outline" fontSize="xl" sx={styles.plus}>
         +
       </Button>
     </HStack>

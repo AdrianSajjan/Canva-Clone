@@ -1,4 +1,5 @@
 export type FabricCanvas = fabric.Canvas | null;
+export type FabricStaticCanvas = fabric.StaticCanvas | null;
 export type FabricEvent = fabric.IEvent<MouseEvent>;
 
 export interface FabricState {
@@ -16,5 +17,6 @@ export type ObjectKeys = keyof fabric.Object;
 export interface FabricSelectedState {
   status: boolean;
   type: string;
+  name: string;
   details: any;
 }

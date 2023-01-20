@@ -1,6 +1,6 @@
 import { fabric as fabricJS } from "fabric";
 import { Ref, useCallback, useImperativeHandle, useRef } from "react";
-import { originalHeight, originalWidth } from "@zocket/config/fabric";
+import { originalHeight, originalWidth } from "@zocket/config/app";
 import { FabricCanvas, FabricState } from "@zocket/interfaces/fabric";
 
 const { Canvas, Object, Textbox, Control } = fabricJS;

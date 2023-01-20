@@ -1,17 +1,29 @@
 import { Box, Button, HStack, Icon, Input, Slider, SliderFilledTrack, SliderThumb, SliderTrack, useDisclosure, useToast } from "@chakra-ui/react";
 import styled from "@emotion/styled";
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { GenericHeader, ImageHeader, TextHeader } from "@zocket/components/Layout/Header";
 import { Main } from "@zocket/components/Layout/Main";
 import { FontFamilySidebar, PropertySidebar, AnimationSidebar } from "@zocket/components/Layout/Sidebar";
-import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/fabric";
+import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/app";
 import { defaultFont, defaultFontSize } from "@zocket/config/fonts";
 import { useFabric } from "@zocket/hooks/useFabric";
-import { FabricCanvas, FabricEvent, FabricSelectedState, FabricStates, FabricTextbox, TextboxKeys } from "@zocket/interfaces/fabric";
+import { usePreview } from "@zocket/hooks/usePreview";
+import {
+  FabricCanvas,
+  FabricEvent,
+  FabricObject,
+  FabricSelectedState,
+  FabricStates,
+  FabricStaticCanvas,
+  FabricTextbox,
+  TextboxKeys,
+} from "@zocket/interfaces/fabric";
 import { addFontFace } from "@zocket/lib/add-font";
 import { fabric as fabricJS } from "fabric";
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as uuid from "uuid";
+import "@zocket/config/fabric";
+import { Scene } from "@zocket/interfaces/animation";
 
 const { Textbox, Image } = fabricJS;
 
@@ -19,7 +31,9 @@ export default function App() {
   const toast = useToast({ position: "top-right", isClosable: true, variant: "left-accent" });
 
   const [scale, setScale] = useState(0.4);
-  const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", details: null });
+  const [isPreview, setPreview] = useState(false);
+  const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", name: "", details: null });
+  // const [scene, setScene] = useState<Scene>([]);
 
   const [actionsEnabled, setActionsEnabled] = useState(true);
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
@@ -30,15 +44,22 @@ export default function App() {
   const { isOpen: isAnimationSidebarOpen, onToggle: onAnimationSidebarToggle, onClose: onAnimationSidebarClose } = useDisclosure();
 
   const image = useRef<HTMLInputElement>(null);
-  const canvas = useRef<FabricCanvas>(null);
+  const video = useRef<HTMLVideoElement>(null);
 
-  const fabric = useFabric({
+  const canvas = useRef<FabricCanvas>(null);
+  const preview = useRef<FabricStaticCanvas>(null);
+
+  const initFabric = useFabric({
     ref: canvas,
     state: [...undoStack].pop(),
     callback: () => {
       onFontSidebarClose();
-      setSelected({ status: false, type: "none", details: null });
+      setSelected({ status: false, type: "none", name: "", details: null });
     },
+  });
+
+  const initPreview = usePreview({
+    ref: preview,
   });
 
   const canUndo = useMemo(() => actionsEnabled && undoStack.length > 1, [undoStack, actionsEnabled]);
@@ -51,11 +72,11 @@ export default function App() {
 
   const updateSelectionState = useCallback((event: FabricEvent) => {
     const element = event.selected![0];
-    setSelected({ status: true, type: element.type!, details: element.toObject(exportedProps) });
+    setSelected({ status: true, type: element.type!, name: element.name!, details: element.toObject(exportedProps) });
   }, []);
 
   const clearSelectionState = useCallback(() => {
-    setSelected({ status: false, type: "none", details: null });
+    setSelected({ status: false, type: "none", name: "", details: null });
     onFontSidebarClose();
   }, []);
 
@@ -96,32 +117,51 @@ export default function App() {
     const undoState = stack[stack.length - 1];
     updateUndoStack(stack);
     updateRedoStack((state) => [...state, currentState]);
+    const active = selected.name;
     canvas.current.clear();
     canvas.current.loadFromJSON(undoState, () => {
       setActionsEnabled(true);
+      if (active) {
+        const elements = canvas.current!.getObjects();
+        for (const element of elements) {
+          if (element.name === active) {
+            canvas.current!.setActiveObject(element);
+          }
+        }
+      }
       canvas.current!.renderAll();
     });
   }, [undoStack, redoStack, canUndo, canvas]);
 
   const redoCanvasState = useCallback(() => {
     if (!canvas.current || !canRedo) return;
-
     setActionsEnabled(false);
     const stack = [...redoStack];
     const redoState = stack.pop()!;
     updateUndoStack((state) => [...state, redoState]);
     updateRedoStack(stack);
+    const active = selected.name;
     canvas.current.clear();
     canvas.current.loadFromJSON(redoState, () => {
       setActionsEnabled(true);
-      canvas.current!.renderAll();
+      if (active) {
+        const elements = canvas.current!.getObjects();
+        for (const element of elements) {
+          if (element.name === active) {
+            canvas.current!.setActiveObject(element);
+            break;
+          }
+        }
+        canvas.current!.renderAll();
+      }
     });
   }, [undoStack, redoStack, canRedo, canvas]);
 
   const deleteCanvasObject = useCallback(() => {
     if (!canvas.current) return;
     const element = canvas.current.getActiveObject();
-    if (element) canvas.current.remove(element);
+    if (!element) return;
+    canvas.current.remove(element);
     canvas.current.fire("object:modified", { target: null });
     canvas.current.requestRenderAll();
   }, [canvas]);
@@ -189,7 +229,6 @@ export default function App() {
 
   const onAddImage = (source: string) => {
     if (!canvas.current) return;
-
     Image.fromURL(
       source,
       (image) => {
@@ -203,7 +242,6 @@ export default function App() {
       },
       {
         name: uuid.v4(),
-        objectCaching: false,
       }
     );
   };
@@ -228,6 +266,10 @@ export default function App() {
     setSelected((state) => ({ ...state, details: text.toObject(exportedProps) }));
   };
 
+  const handlePreviewToggle = () => {
+    setPreview((preview) => !preview);
+  };
+
   const headerComponentMap = {
     none: <GenericHeader {...{ onAddText, onOpenImageExplorer }} />,
     textbox: (
@@ -246,10 +288,13 @@ export default function App() {
         <Main isCollapsed={isFontSidebarOpen}>
           <MainContainer>
             <Box height={containerHeight} width={containerWidth} shadow="sm" pos="relative">
-              <Video src="/sample-video.mp4" />
-              <CanvasContainer transform={transform}>
-                <canvas ref={fabric} />
+              <Video ref={video} src="/sample-video.mp4" />
+              <CanvasContainer transform={transform} display={isPreview ? "none" : "block"}>
+                <canvas ref={initFabric} />
                 <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
+              </CanvasContainer>
+              <CanvasContainer transform={transform} display={isPreview ? "block" : "none"}>
+                <canvas ref={initPreview} />
               </CanvasContainer>
             </Box>
           </MainContainer>
@@ -262,9 +307,15 @@ export default function App() {
           <AnimationSidebar canvas={canvas.current} isOpen={isAnimationSidebarOpen} onClose={onAnimationSidebarClose} {...{ selected }} />
         </Main>
         <Footer>
-          <Button variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
-            Preview Video
-          </Button>
+          {isPreview ? (
+            <Button onClick={handlePreviewToggle} variant="solid" colorScheme="purple" leftIcon={<Icon as={PauseIcon} fontSize="xl" />}>
+              Stop Preview
+            </Button>
+          ) : (
+            <Button onClick={handlePreviewToggle} variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
+              Start Preview
+            </Button>
+          )}
           <HStack ml="auto">
             <HStack spacing={2} mr={8}>
               <Button variant="ghost" fontWeight={600}>

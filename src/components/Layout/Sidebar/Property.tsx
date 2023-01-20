@@ -1,9 +1,9 @@
-import { Box, Button, HStack, Icon, IconButton, Input, InputGroup, InputLeftAddon, InputRightAddon, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, IconButton, Text, VStack } from "@chakra-ui/react";
 import styled from "@emotion/styled";
 import { ChevronDoubleRightIcon } from "@heroicons/react/24/solid";
-import { RotateInput } from "@zocket/components/Input";
+import { PropertyInput, RotateInput } from "@zocket/components/Input";
 import { FabricCanvas, FabricSelectedState, ObjectKeys } from "@zocket/interfaces/fabric";
-import { ChangeEvent } from "react";
+import { useMemo } from "react";
 
 interface PropertySidebar {
   isOpen: boolean;
@@ -14,10 +14,7 @@ interface PropertySidebar {
 }
 
 export default function PropertySidebar({ isOpen, canvas, selected, onClose, onTextPropertyChange }: PropertySidebar) {
-  const handlePropertyChange = (property: ObjectKeys) => (event: ChangeEvent<HTMLInputElement>) =>
-    event.target.value ? onTextPropertyChange(property)(parseFloat(event.target.value)) : onTextPropertyChange(property)(10);
-
-  if (!isOpen || !selected.details) return null;
+  const isText = useMemo(() => (selected.details ? selected.details.type === "textbox" : false), [selected]);
 
   const handleViewportCenter = () => {
     if (!canvas) return;
@@ -43,6 +40,32 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
     canvas.fire("object:modified", { target: element });
   };
 
+  const handlePropertyChange = (property: ObjectKeys) => (value: string) => {
+    onTextPropertyChange(property)(parseFloat(value));
+  };
+
+  const handleDimensionChange = (property: "height" | "width") => (value: string) => {
+    if (!canvas) return;
+    const element = canvas.getActiveObject()!;
+    if (property === "height") {
+      if (element.type === "textbox") return;
+      if (element.type === "image") {
+        element.scaleToHeight(parseFloat(value));
+      } else {
+        element.set("height", parseFloat(value));
+      }
+    } else {
+      if (element.type === "image") {
+        element.scaleToWidth(parseFloat(value));
+      } else {
+        element.set("width", parseFloat(value));
+      }
+    }
+    canvas.requestRenderAll();
+  };
+
+  if (!isOpen || !selected.details) return null;
+
   return (
     <Sidebar>
       <HStack justify="space-between">
@@ -56,16 +79,8 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
           Position
         </Text>
         <VStack spacing={4} mt={2} alignItems="stretch">
-          <InputGroup>
-            <InputLeftAddon>X</InputLeftAddon>
-            <Input textAlign="center" value={selected.details.left} onChange={handlePropertyChange("left")} />
-            <InputRightAddon>px</InputRightAddon>
-          </InputGroup>
-          <InputGroup>
-            <InputLeftAddon>Y</InputLeftAddon>
-            <Input textAlign="center" value={selected.details.top} onChange={handlePropertyChange("top")} />
-            <InputRightAddon>px</InputRightAddon>
-          </InputGroup>
+          <PropertyInput left="X" right="px" value={selected.details.left} onChange={handlePropertyChange("left")} />
+          <PropertyInput left="Y" right="px" value={selected.details.top} onChange={handlePropertyChange("top")} />
         </VStack>
       </Box>
       <Box mt={6}>
@@ -73,40 +88,15 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
           Dimension
         </Text>
         <VStack spacing={4} mt={2} alignItems="stretch">
-          <InputGroup>
-            <InputLeftAddon>W</InputLeftAddon>
-            <Input textAlign="center" value={selected.details.width} onChange={handlePropertyChange("width")} />
-            <InputRightAddon>px</InputRightAddon>
-          </InputGroup>
-          <InputGroup>
-            <InputLeftAddon>H</InputLeftAddon>
-            <Input textAlign="center" value={selected.details.height} onChange={handlePropertyChange("height")} />
-            <InputRightAddon>px</InputRightAddon>
-          </InputGroup>
-        </VStack>
-      </Box>
-      <Box mt={6}>
-        <Text textAlign="center" fontWeight="600">
-          Scale
-        </Text>
-        <VStack spacing={4} mt={2} alignItems="stretch">
-          <InputGroup>
-            <InputLeftAddon>X</InputLeftAddon>
-            <Input textAlign="center" value={selected.details.scaleX} onChange={handlePropertyChange("scaleX")} />
-            <InputRightAddon>px</InputRightAddon>
-          </InputGroup>
-          <InputGroup>
-            <InputLeftAddon>Y</InputLeftAddon>
-            <Input textAlign="center" value={selected.details.scaleY} onChange={handlePropertyChange("scaleY")} />
-            <InputRightAddon>px</InputRightAddon>
-          </InputGroup>
+          <PropertyInput left="W" right="px" value={selected.details.width} onChange={handleDimensionChange("width")} />
+          <PropertyInput isDisabled={isText} left="H" right="px" value={selected.details.height} onChange={handleDimensionChange("height")} />
         </VStack>
       </Box>
       <Box mt={6}>
         <Text textAlign="center" fontWeight="600">
           Rotation
         </Text>
-        <RotateInput value={selected.details.angle} handleChange={onTextPropertyChange("angle")} mt={2} />
+        <RotateInput value={selected.details.angle} onChange={onTextPropertyChange("angle")} mt={2} />
       </Box>
       <VStack alignItems="stretch" spacing={4} mt={8}>
         <Button onClick={handleViewportCenter}>Viewport Center</Button>

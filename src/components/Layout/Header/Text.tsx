@@ -50,13 +50,13 @@ export default function TextHeader({
       <Button variant="outline" bgColor={background} rightIcon={<Icon as={ChevronDownIcon} ml={1} />} onClick={onFontSidebarToggle}>
         {selected.details.fontFamily}
       </Button>
-      <FontSizeInput value={selected.details.fontSize} handleChange={onTextPropertyChange("fontSize")} />
+      <FontSizeInput value={selected.details.fontSize} onChange={onTextPropertyChange("fontSize")} />
       <ButtonGroup isAttached>
         {alignments.map(({ icon, label, value }) => (
           <IconButton key={value} variant={align === value ? "solid" : "outline"} aria-label={label} icon={icon} onClick={onFontAlignClick(value)} />
         ))}
       </ButtonGroup>
-      <FontColorPicker value={selected.details.color} onChange={onTextPropertyChange("fill")} />
+      <FontColorPicker value={selected.details.fill} onChange={onTextPropertyChange("fill")} />
       <HStack ml="auto" spacing={4}>
         <Button variant="outline" onClick={onPropertySidebarToggle} leftIcon={<Icon fontSize="lg" as={Bars4Icon} />}>
           Properties
