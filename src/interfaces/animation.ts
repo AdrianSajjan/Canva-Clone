@@ -10,7 +10,7 @@ export interface SceneObject {
 export interface Animation {
   entryTime: number;
   entryAnim?: string;
-  hasExitTime?: boolean;
-  exitTime?: number;
+  hasExitTime: boolean;
+  exitTime: number;
   exitAnim?: string;
 }

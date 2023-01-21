@@ -33,7 +33,7 @@ export default function App() {
   const [scale, setScale] = useState(0.4);
   const [isPreview, setPreview] = useState(false);
   const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", name: "", details: null });
-  // const [scene, setScene] = useState<Scene>([]);
+  const [scene, setScene] = useState<Scene>([]);
 
   const [actionsEnabled, setActionsEnabled] = useState(true);
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
@@ -199,8 +199,74 @@ export default function App() {
     canvas.current.on("selection:cleared", clearSelectionState);
   }, [canvas, saveCanvasState, updateSelectionState]);
 
+  const handleStartPreview = () => {
+    if (!canvas.current || !video.current || !preview.current) return;
+    const state = onSaveScene();
+    for (const object of state) {
+      switch (object.type) {
+        case "textbox":
+          const textbox = new Textbox(object.details.text, { ...object.details });
+          preview.current.add(textbox);
+
+          if (object.animation.entryTime > 0) {
+            const entryTime = object.animation.entryTime * 1000;
+            const duration = 500;
+            const timeout = entryTime - duration;
+            textbox.set("opacity", 0);
+            setTimeout(() => {
+              textbox.animate("opacity", 1, {
+                duration,
+                onChange: () => preview.current!.renderAll(),
+                easing: fabricJS.util.ease.easeInSine,
+              });
+            }, timeout);
+          }
+
+          if (object.animation.hasExitTime) {
+            const exitTime = object.animation.exitTime * 1000;
+            const duration = 500;
+            const timeout = exitTime - duration;
+            setTimeout(() => {
+              textbox.animate("opacity", 0, {
+                duration,
+                onChange: () => preview.current!.renderAll(),
+                onComplete: () => preview.current!.remove(textbox),
+                easing: fabricJS.util.ease.easeInSine,
+              });
+            }, timeout);
+          }
+
+          break;
+
+        case "image":
+          break;
+      }
+    }
+
+    preview.current.requestRenderAll();
+    setPreview(true);
+    video.current.play();
+    video.current.onended = () => handleStopPreview();
+    video.current.ontimeupdate = () => console.log(Math.trunc(video.current!.currentTime * 1000), "ms");
+  };
+
+  const handleStopPreview = () => {
+    setPreview(false);
+    video.current!.pause();
+    video.current!.currentTime = 0;
+    if (preview.current) preview.current.clear();
+  };
+
+  const onSaveScene = () => {
+    const objects = canvas.current!.getObjects();
+    const state = objects.map((object) => ({ type: object.type!, animation: object._anim, details: object.toObject(), name: object.name! }));
+    setScene(state);
+    return state as Scene;
+  };
+
   const onOpenImageExplorer = () => {
-    image.current?.click();
+    if (!image.current) return;
+    image.current.click();
   };
 
   const onFileInputClick = (event: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
@@ -229,6 +295,7 @@ export default function App() {
 
   const onAddImage = (source: string) => {
     if (!canvas.current) return;
+
     Image.fromURL(
       source,
       (image) => {
@@ -264,10 +331,6 @@ export default function App() {
     canvas.current.fire("object:modified", { target: text });
     canvas.current.requestRenderAll();
     setSelected((state) => ({ ...state, details: text.toObject(exportedProps) }));
-  };
-
-  const handlePreviewToggle = () => {
-    setPreview((preview) => !preview);
   };
 
   const headerComponentMap = {
@@ -308,11 +371,11 @@ export default function App() {
         </Main>
         <Footer>
           {isPreview ? (
-            <Button onClick={handlePreviewToggle} variant="solid" colorScheme="purple" leftIcon={<Icon as={PauseIcon} fontSize="xl" />}>
+            <Button variant="solid" onClick={handleStopPreview} colorScheme="purple" leftIcon={<Icon as={PauseIcon} fontSize="xl" />}>
               Stop Preview
             </Button>
           ) : (
-            <Button onClick={handlePreviewToggle} variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
+            <Button onClick={handleStartPreview} variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
               Start Preview
             </Button>
           )}
