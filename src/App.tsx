@@ -9,6 +9,7 @@ import { defaultFont, defaultFontSize } from "@zocket/config/fonts";
 import { useFabric } from "@zocket/hooks/useFabric";
 import { usePreview } from "@zocket/hooks/usePreview";
 import {
+  Clipboard,
   FabricCanvas,
   FabricEvent,
   FabricObject,
@@ -33,7 +34,7 @@ export default function App() {
   const [scale, setScale] = useState(0.4);
   const [isPreview, setPreview] = useState(false);
   const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", name: "", details: null });
-  const [scene, setScene] = useState<Scene>([]);
+  const [clipboard, setClipboard] = useState<Clipboard>(null);
 
   const [actionsEnabled, setActionsEnabled] = useState(true);
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
@@ -166,14 +167,43 @@ export default function App() {
     canvas.current.requestRenderAll();
   }, [canvas]);
 
+  const copyCanvasObject = useCallback(() => {
+    if (!canvas.current) return;
+    const element = canvas.current.getActiveObject();
+    if (!element) return;
+    element.clone((clone: FabricObject) => {
+      setClipboard(clone);
+    }, exportedProps);
+  }, [canvas]);
+
+  const pasteCanvasObject = useCallback(() => {
+    if (!canvas.current || !clipboard) return;
+    clipboard.clone(function (clone: FabricObject) {
+      canvas.current!.discardActiveObject();
+      clone.set({ name: uuid.v4(), left: clone.left! + 10, top: clone.top! + 10, evented: true });
+      clone.setCoords();
+      canvas.current!.add(clone);
+      canvas.current!.setActiveObject(clone);
+      canvas.current!.fire("object:modified", { target: clone });
+      canvas.current!.requestRenderAll();
+      setClipboard((state) => {
+        state!.left! += 10;
+        state!.top! += 10;
+        return state;
+      });
+    }, exportedProps);
+  }, [canvas, clipboard]);
+
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
       if (event.repeat) return;
       if (event.ctrlKey && event.key === "z") undoCanvasState();
       if (event.ctrlKey && event.key === "y") redoCanvasState();
+      if (event.ctrlKey && event.key === "c") copyCanvasObject();
+      if (event.ctrlKey && event.key === "v") pasteCanvasObject();
       if (event.key === "Delete") deleteCanvasObject();
     },
-    [undoCanvasState, redoCanvasState]
+    [undoCanvasState, redoCanvasState, copyCanvasObject, pasteCanvasObject, deleteCanvasObject]
   );
 
   useEffect(() => {
@@ -270,7 +300,6 @@ export default function App() {
   const onSaveScene = () => {
     const objects = canvas.current!.getObjects();
     const state = objects.map((object) => ({ type: object.type!, animation: object._anim, details: object.toObject(), name: object.name! }));
-    setScene(state);
     return state as Scene;
   };
 

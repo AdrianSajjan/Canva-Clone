@@ -20,3 +20,5 @@ export interface FabricSelectedState {
   name: string;
   details: any;
 }
+
+export type Clipboard = FabricObject | null;
