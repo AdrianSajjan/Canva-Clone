@@ -2,11 +2,11 @@ import { Input, InputGroup, InputLeftAddon, InputRightAddon } from "@chakra-ui/r
 import { ChangeEvent, KeyboardEvent, useEffect, useState } from "react";
 
 interface PropertyInputProps {
-  value: string;
+  value: any;
   left?: string;
   right?: string;
   isDisabled?: boolean;
-  onChange: (_: string) => void;
+  onChange: (_: any) => void;
 }
 
 export default function PropertyInput({ onChange, value, left, right, isDisabled }: PropertyInputProps) {

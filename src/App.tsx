@@ -23,7 +23,7 @@ import { fabric as fabricJS } from "fabric";
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as uuid from "uuid";
 import "@zocket/config/fabric";
-import { Scene } from "@zocket/interfaces/animation";
+import { Scene, SceneObject } from "@zocket/interfaces/animation";
 
 const { Textbox, Image } = fabricJS;
 
@@ -207,47 +207,57 @@ export default function App() {
         case "textbox":
           const textbox = new Textbox(object.details.text, { ...object.details });
           preview.current.add(textbox);
-
-          if (object.animation.entryTime > 0) {
-            const entryTime = object.animation.entryTime * 1000;
-            const duration = 500;
-            const timeout = entryTime - duration;
-            textbox.set("opacity", 0);
-            setTimeout(() => {
-              textbox.animate("opacity", 1, {
-                duration,
-                onChange: () => preview.current!.renderAll(),
-                easing: fabricJS.util.ease.easeInSine,
-              });
-            }, timeout);
-          }
-
-          if (object.animation.hasExitTime) {
-            const exitTime = object.animation.exitTime * 1000;
-            const duration = 500;
-            const timeout = exitTime - duration;
-            setTimeout(() => {
-              textbox.animate("opacity", 0, {
-                duration,
-                onChange: () => preview.current!.renderAll(),
-                onComplete: () => preview.current!.remove(textbox),
-                easing: fabricJS.util.ease.easeInSine,
-              });
-            }, timeout);
-          }
-
+          handleAnimation(textbox, object);
           break;
-
         case "image":
+          Image.fromURL(
+            object.details.src,
+            (image) => {
+              preview.current!.add(image);
+              handleAnimation(image, object);
+            },
+            {
+              ...object.details,
+              objectCaching: true,
+            }
+          );
           break;
       }
     }
-
     preview.current.requestRenderAll();
     setPreview(true);
     video.current.play();
     video.current.onended = () => handleStopPreview();
     video.current.ontimeupdate = () => console.log(Math.trunc(video.current!.currentTime * 1000), "ms");
+  };
+
+  const handleAnimation = (element: FabricObject, state: SceneObject) => {
+    if (state.animation.entryTime > 0) {
+      const entryTime = state.animation.entryTime * 1000;
+      const duration = 500;
+      const timeout = entryTime - duration;
+      element.set("opacity", 0);
+      setTimeout(() => {
+        element.animate("opacity", 1, {
+          duration,
+          onChange: () => preview.current!.renderAll(),
+          easing: fabricJS.util.ease.easeInSine,
+        });
+      }, timeout);
+    }
+    if (state.animation.hasExitTime) {
+      const exitTime = state.animation.exitTime * 1000;
+      const duration = 500;
+      const timeout = exitTime - duration;
+      setTimeout(() => {
+        element.animate("opacity", 0, {
+          duration,
+          onChange: () => preview.current!.renderAll(),
+          onComplete: () => preview.current!.remove(element),
+          easing: fabricJS.util.ease.easeInSine,
+        });
+      }, timeout);
+    }
   };
 
   const handleStopPreview = () => {
@@ -295,7 +305,6 @@ export default function App() {
 
   const onAddImage = (source: string) => {
     if (!canvas.current) return;
-
     Image.fromURL(
       source,
       (image) => {
@@ -309,6 +318,7 @@ export default function App() {
       },
       {
         name: uuid.v4(),
+        objectCaching: false,
       }
     );
   };

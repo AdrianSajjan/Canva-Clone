@@ -50,13 +50,15 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
     if (property === "height") {
       if (element.type === "textbox") return;
       if (element.type === "image") {
-        element.scaleToHeight(parseFloat(value));
+        const scale = parseFloat(value) / element.height!;
+        element.set("scaleY", scale);
       } else {
         element.set("height", parseFloat(value));
       }
     } else {
       if (element.type === "image") {
-        element.scaleToWidth(parseFloat(value));
+        const scale = parseFloat(value) / element.width!;
+        element.set("scaleX", scale);
       } else {
         element.set("width", parseFloat(value));
       }
@@ -88,8 +90,14 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
           Dimension
         </Text>
         <VStack spacing={4} mt={2} alignItems="stretch">
-          <PropertyInput left="W" right="px" value={selected.details.width} onChange={handleDimensionChange("width")} />
-          <PropertyInput isDisabled={isText} left="H" right="px" value={selected.details.height} onChange={handleDimensionChange("height")} />
+          <PropertyInput left="W" right="px" value={selected.details.width * selected.details.scaleX} onChange={handleDimensionChange("width")} />
+          <PropertyInput
+            isDisabled={isText}
+            left="H"
+            right="px"
+            value={selected.details.height * selected.details.scaleY}
+            onChange={handleDimensionChange("height")}
+          />
         </VStack>
       </Box>
       <Box mt={6}>
