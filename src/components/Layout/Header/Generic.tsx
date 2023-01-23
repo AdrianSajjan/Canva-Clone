@@ -12,7 +12,7 @@ export default function GenericHeader({ onAddText, onOpenImageExplorer }: Generi
   return (
     <Header>
       <Box>
-        <Button variant="outline" leftIcon={<Icon as={DocumentChartBarIcon} fontSize="xl" />}>
+        <Button isDisabled variant="outline" leftIcon={<Icon as={DocumentChartBarIcon} fontSize="xl" />}>
           Select Template
         </Button>
         <Button onClick={onAddText} ml={4} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>
@@ -23,10 +23,10 @@ export default function GenericHeader({ onAddText, onOpenImageExplorer }: Generi
         </Button>
       </Box>
       <Box ml="auto">
-        <Button colorScheme="blue" variant="outline" leftIcon={<Icon as={CloudArrowUpIcon} fontSize="xl" />}>
+        <Button isDisabled colorScheme="blue" variant="outline" leftIcon={<Icon as={CloudArrowUpIcon} fontSize="xl" />}>
           Save Changes
         </Button>
-        <Button ml={4} colorScheme="green" leftIcon={<Icon as={PaperAirplaneIcon} fontSize="xl" />}>
+        <Button isDisabled ml={4} colorScheme="green" leftIcon={<Icon as={PaperAirplaneIcon} fontSize="xl" />}>
           Export Video
         </Button>
       </Box>

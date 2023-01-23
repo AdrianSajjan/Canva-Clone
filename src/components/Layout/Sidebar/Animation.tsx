@@ -72,7 +72,7 @@ export default function AnimationSidebar({ isOpen, selected, canvas, onClose }: 
             <FormHelperText>Entry time of the object</FormHelperText>
           </FormControl>
           <Box>
-            <AnimationSelect variant="outline" rightIcon={<Icon as={ChevronDownIcon} fontSize="lg" />}>
+            <AnimationSelect isDisabled variant="outline" rightIcon={<Icon as={ChevronDownIcon} fontSize="lg" />}>
               Fade
             </AnimationSelect>
             <Text fontSize="sm" mt={2} lineHeight="normal" color="gray.600">
@@ -95,7 +95,7 @@ export default function AnimationSidebar({ isOpen, selected, canvas, onClose }: 
             <FormHelperText>Exit time of the object</FormHelperText>
           </FormControl>
           <Box>
-            <AnimationSelect isDisabled={!animation.hasExitTime} variant="outline" rightIcon={<Icon as={ChevronDownIcon} fontSize="lg" />}>
+            <AnimationSelect isDisabled variant="outline" rightIcon={<Icon as={ChevronDownIcon} fontSize="lg" />}>
               Fade
             </AnimationSelect>
             <Text fontSize="sm" mt={2} lineHeight="normal" color="gray.600">
