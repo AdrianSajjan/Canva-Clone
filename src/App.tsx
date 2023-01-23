@@ -299,6 +299,7 @@ export default function App() {
 
   const onSaveScene = () => {
     const objects = canvas.current!.getObjects();
+    // @ts-ignore
     const state = objects.map((object) => ({ type: object.type!, animation: object._anim, details: object.toObject(), name: object.name! }));
     return state as Scene;
   };

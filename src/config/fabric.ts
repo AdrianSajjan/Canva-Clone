@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { fabric as fabricJS } from "fabric";
 import { Animation } from "@zocket/interfaces/animation";
 
@@ -20,6 +21,7 @@ fabricJS.Object.prototype.cornerSize = 16;
 fabricJS.Object.prototype.cornerStyle = "circle";
 fabricJS.Object.prototype.borderColor = "#BE94F5";
 fabricJS.Object.prototype.cornerColor = "#BE94F5";
+// @ts-ignore
 fabricJS.Object.prototype._anim = {
   entryTime: 0,
   exitTime: 0,

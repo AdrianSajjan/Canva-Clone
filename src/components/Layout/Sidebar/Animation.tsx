@@ -33,6 +33,7 @@ export default function AnimationSidebar({ isOpen, selected, canvas, onClose }: 
     if (!canvas) return;
     const element = canvas.getActiveObject()!;
     const value = event.target.value ? parseFloat(event.target.value) : 0;
+    // @ts-ignore
     element._anim = { ...element._anim, [property]: value };
     canvas.fire("object:modified", { target: element });
   };
@@ -40,6 +41,7 @@ export default function AnimationSidebar({ isOpen, selected, canvas, onClose }: 
   const handleAnimationTypeChange = (property: "entryAnim" | "exitAnim") => (value: string) => {
     if (!canvas) return;
     const element = canvas.getActiveObject()!;
+    // @ts-ignore
     element._anim = { ...element._anim, [property]: value };
     canvas.fire("object:modified", { target: element });
   };
@@ -47,6 +49,7 @@ export default function AnimationSidebar({ isOpen, selected, canvas, onClose }: 
   const handleExitAnimToggle = (event: ChangeEvent<HTMLInputElement>) => {
     if (!canvas) return;
     const element = canvas.getActiveObject()!;
+    // @ts-ignore
     element._anim = { ...element._anim, hasExitTime: event.target.checked };
     canvas.fire("object:modified", { target: element });
   };
