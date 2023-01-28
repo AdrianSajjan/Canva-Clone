@@ -33,8 +33,6 @@ export default function App() {
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
   const [redoStack, updateRedoStack] = useState<FabricStates>([]);
 
-  console.log(undoStack);
-
   const canUndo = useMemo(() => actionsEnabled && undoStack.length > 1, [undoStack, actionsEnabled]);
   const canRedo = useMemo(() => actionsEnabled && redoStack.length > 0, [redoStack, actionsEnabled]);
 
@@ -46,6 +44,7 @@ export default function App() {
   const isMainCollapsed = useMemo(() => isFontFamilySidebarOpen || isTemplateSidebarOpen, [isFontFamilySidebarOpen, isTemplateSidebarOpen]);
 
   const canvas = useRef<FabricCanvas>(null);
+  const video = useRef<HTMLVideoElement>(null);
   const image = useRef<HTMLInputElement>(null);
   const preview = useRef<FabricStaticCanvas>(null);
 
@@ -77,23 +76,51 @@ export default function App() {
     onFontFamilySidebarClose();
   }, []);
 
+  const initializeCanvasBackground = useCallback((canvas: NonNullable<FabricCanvas | FabricStaticCanvas>, template: FabricTemplate, preview?: boolean) => {
+    switch (template.background.type) {
+      case "color":
+        canvas.setBackgroundColor(template.background.value, canvas.renderAll.bind(canvas));
+        return;
+      case "image":
+        canvas.setBackgroundImage(template.background.value, canvas.renderAll.bind(canvas));
+        return;
+      case "video":
+        if (!video.current) return;
+        video.current.src = template.background.value;
+        video.current.currentTime = 0.1;
+        video.current.load();
+        if (!preview) {
+          video.current.style.display = "block";
+        } else {
+          const element = new Image(video.current!, { name: uuid.v4(), objectCaching: false, height: 1920, width: 1080, selectable: false });
+          canvas.add(element);
+          fabricJS.util.requestAnimFrame(function render() {
+            canvas.renderAll();
+            fabricJS.util.requestAnimFrame(render);
+          });
+        }
+    }
+  }, []);
+
   const initializeCanvasTemplate = useCallback(
-    (template: FabricTemplate) => {
+    async (template: FabricTemplate) => {
       if (!canvas.current) return;
       canvas.current.clear();
       updateRedoStack([]);
       updateUndoStack([]);
-      switch (template.background.type) {
-        case "color":
-          canvas.current.setBackgroundColor(template.background.value, () => {
-            canvas.current!.renderAll();
-          });
-          break;
-        case "image":
-          break;
-        case "video":
-          break;
+      setTemplate(template);
+      initializeCanvasBackground(canvas.current, template);
+      for (const element of template.state) {
+        switch (element.type) {
+          case "textbox":
+            const { error, name } = await addFontFace(element.details.fontFamily || defaultFont);
+            if (error) toast({ title: "Error", description: error, status: "error" });
+            const textbox = new Textbox(element.value!, { ...element.details, name: element.name, fontFamily: name });
+            canvas.current.add(textbox);
+        }
       }
+      canvas.current.fire("object:modified", { target: null });
+      canvas.current.requestRenderAll();
     },
     [canvas]
   );
@@ -223,10 +250,17 @@ export default function App() {
     [undoCanvasState, redoCanvasState, copyCanvasObject, pasteCanvasObject, deleteCanvasObject]
   );
 
+  // dev-only -> replace with initialize undo stack in callback function in fabric initialization hook
   useEffect(() => {
     if (!canvas.current) return;
     const state = canvas.current.toObject();
     updateUndoStack([state]);
+  }, []);
+
+  // dev-only
+  useEffect(() => {
+    if (!template || !canvas.current) return;
+    initializeCanvasTemplate(template);
   }, []);
 
   useEffect(() => {
@@ -248,6 +282,7 @@ export default function App() {
 
   const handleStartPreview = () => {
     if (!canvas.current || !preview.current) return;
+    if (template) initializeCanvasBackground(preview.current, template);
     const state = onSaveScene();
     for (const object of state) {
       switch (object.type) {
@@ -273,9 +308,6 @@ export default function App() {
     }
     preview.current.requestRenderAll();
     setPreview(true);
-    // video.current.play();
-    // video.current.onended = () => handleStopPreview();
-    // video.current.ontimeupdate = () => console.log(Math.trunc(video.current!.currentTime * 1000), "ms");
   };
 
   const handleAnimation = (element: FabricObject, state: SceneObject) => {
@@ -309,8 +341,6 @@ export default function App() {
 
   const handleStopPreview = () => {
     setPreview(false);
-    // video.current!.pause();
-    // video.current!.currentTime = 0;
     if (preview.current) preview.current.clear();
   };
 
@@ -365,7 +395,7 @@ export default function App() {
       },
       {
         name: uuid.v4(),
-        objectCaching: false,
+        objectCaching: true,
       }
     );
   };
@@ -405,9 +435,10 @@ export default function App() {
         <Main isCollapsed={isMainCollapsed}>
           <MainContainer>
             <Box height={containerHeight} width={containerWidth} shadow="sm" pos="relative">
+              <Video ref={video} width={1080} height={1920} />
+              <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
               <CanvasContainer transform={transform} display={isPreview ? "none" : "block"}>
                 <canvas ref={initFabric} />
-                <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
               </CanvasContainer>
               <CanvasContainer transform={transform} display={isPreview ? "block" : "none"}>
                 <canvas ref={initPreview} />
@@ -450,9 +481,8 @@ const Layout = styled.div`
 `;
 
 const Video = styled.video`
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background-color: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
 `;

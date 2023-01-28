@@ -2,7 +2,9 @@ import { HStack, IconButton, Input, InputGroup, InputLeftElement, Icon, VStack, 
 import styled from "@emotion/styled";
 import { ArrowLeftOnRectangleIcon, MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import { FabricTemplate } from "@zocket/interfaces/app";
+import { templates } from "@zocket/mock/templates";
 import { ChangeEvent, useState } from "react";
+import * as uuid from "uuid";
 
 interface TemplateSidebarProps {
   isOpen?: boolean;
@@ -15,21 +17,7 @@ export default function TemplateSidebar({ isOpen, onClose, handleTemplateChange 
 
   const onQueryChange = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
 
-  const onTemplateChange = (_?: FabricTemplate) => () =>
-    handleTemplateChange?.({
-      background: {
-        type: "color",
-        value: "#000000",
-      },
-      state: [
-        {
-          name: "djsioahduh3192391203o123llwjiasu9seiosek",
-          type: "textbox",
-          value: "Hello World",
-          details: { top: 500, left: 500, fill: "#FFFFFF", fontFamily: "Raleway Regular", fontSize: 80 },
-        },
-      ],
-    });
+  const onTemplateChange = (value: FabricTemplate) => () => handleTemplateChange?.(value);
 
   if (!isOpen) return null;
 
@@ -46,9 +34,10 @@ export default function TemplateSidebar({ isOpen, onClose, handleTemplateChange 
       </HStack>
       <VStack pt={2} alignItems="start" px={4} pb={4} overflowY="auto">
         <Text fontSize={14}>All Results</Text>
-        <VStack>
-          <Button onClick={onTemplateChange()}>Template 1</Button>
-        </VStack>
+        <HStack wrap="nowrap">
+          <Button onClick={onTemplateChange(templates[0])}>Template 1</Button>
+          <Button onClick={onTemplateChange(templates[1])}>Template 2</Button>
+        </HStack>
       </VStack>
     </Sidebar>
   );
