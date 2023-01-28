@@ -6,9 +6,9 @@ import { FabricSelectedState, TextboxKeys } from "@zocket/interfaces/fabric";
 import { useMemo } from "react";
 
 interface TextHeaderProps {
-  isFontSidebarOpen: boolean;
   selected: FabricSelectedState;
-  onFontSidebarToggle: () => void;
+  isFontFamilySidebarOpen: boolean;
+  onFontFamilySidebarToggle: () => void;
   onPropertySidebarToggle: () => void;
   onAnimationSidebarToggle: () => void;
   onTextPropertyChange: (property: TextboxKeys) => (value: any) => void;
@@ -33,21 +33,21 @@ const alignments = [
 ];
 
 export default function TextHeader({
-  isFontSidebarOpen,
   selected,
-  onFontSidebarToggle,
+  isFontFamilySidebarOpen,
+  onFontFamilySidebarToggle,
   onPropertySidebarToggle,
   onTextPropertyChange,
   onAnimationSidebarToggle,
 }: TextHeaderProps) {
-  const background = useMemo(() => (isFontSidebarOpen ? "gray.200" : "white"), [isFontSidebarOpen]);
+  const background = useMemo(() => (isFontFamilySidebarOpen ? "gray.200" : "white"), [isFontFamilySidebarOpen]);
   const align = useMemo(() => selected.details.textAlign, [selected]);
 
   const onFontAlignClick = (value: string) => () => onTextPropertyChange("textAlign")(value);
 
   return (
     <Header as={Flex} gap={4} overflowX="auto" flexWrap="wrap">
-      <Button variant="outline" bgColor={background} rightIcon={<Icon as={ChevronDownIcon} ml={1} />} onClick={onFontSidebarToggle}>
+      <Button variant="outline" bgColor={background} rightIcon={<Icon as={ChevronDownIcon} ml={1} />} onClick={onFontFamilySidebarToggle}>
         {selected.details.fontFamily}
       </Button>
       <FontSizeInput value={selected.details.fontSize} onChange={onTextPropertyChange("fontSize")} />

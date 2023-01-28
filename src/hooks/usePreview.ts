@@ -18,7 +18,7 @@ export function usePreview({ ref }: UseFabricProps) {
 
   const fabric = useCallback((element: HTMLCanvasElement) => {
     if (!element) return canvas.current?.dispose();
-    canvas.current = new StaticCanvas(element, { width: originalWidth, height: originalHeight, selection: false });
+    canvas.current = new StaticCanvas(element, { width: originalWidth, height: originalHeight, backgroundColor: "#FFFFFF", selection: false });
   }, []);
 
   return fabric;

@@ -1,18 +1,18 @@
 import { Box, Button, Icon } from "@chakra-ui/react";
 import { ChatBubbleOvalLeftIcon, CloudArrowUpIcon, DocumentChartBarIcon, PaperAirplaneIcon, PhotoIcon } from "@heroicons/react/24/solid";
 import { Header } from "@zocket/components/Layout/Header";
-import { Styles } from "@zocket/config/theme";
 
 interface GenericHeaderProps {
   onAddText?: () => void;
   onOpenImageExplorer?: () => void;
+  onTemplateSidebarToggle?: () => void;
 }
 
-export default function GenericHeader({ onAddText, onOpenImageExplorer }: GenericHeaderProps) {
+export default function GenericHeader({ onAddText, onOpenImageExplorer, onTemplateSidebarToggle }: GenericHeaderProps) {
   return (
     <Header>
       <Box>
-        <Button isDisabled variant="outline" leftIcon={<Icon as={DocumentChartBarIcon} fontSize="xl" />}>
+        <Button variant="outline" leftIcon={<Icon as={DocumentChartBarIcon} fontSize="xl" />} onClick={onTemplateSidebarToggle}>
           Select Template
         </Button>
         <Button onClick={onAddText} ml={4} variant="outline" leftIcon={<Icon as={ChatBubbleOvalLeftIcon} fontSize="xl" />}>

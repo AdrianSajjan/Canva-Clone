@@ -26,10 +26,11 @@ export const theme = extendTheme({
       "::-webkit-scrollbar": {
         width: 2,
         height: 2,
-        background: "gray.100",
+        background: "white",
       },
       "::-webkit-scrollbar-thumb": {
         background: "gray.400",
+        borderRadius: 10,
       },
       "::-webkit-scrollbar-corner": {
         background: "gray.100",

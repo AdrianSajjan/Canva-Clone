@@ -5,6 +5,7 @@ export type FabricEvent = fabric.IEvent<MouseEvent>;
 export interface FabricState {
   version: string;
   objects: fabric.Object[];
+  background?: string;
 }
 
 export type FabricStates = Array<FabricState>;

@@ -1,30 +1,21 @@
-import { Box, Button, HStack, Icon, Input, Slider, SliderFilledTrack, SliderThumb, SliderTrack, useDisclosure, useToast } from "@chakra-ui/react";
+import "@zocket/config/fabric";
+import { Box, Input, useDisclosure, useToast } from "@chakra-ui/react";
 import styled from "@emotion/styled";
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PauseIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { Footer } from "@zocket/components/Layout/Footer";
 import { GenericHeader, ImageHeader, TextHeader } from "@zocket/components/Layout/Header";
 import { Main } from "@zocket/components/Layout/Main";
-import { FontFamilySidebar, PropertySidebar, AnimationSidebar } from "@zocket/components/Layout/Sidebar";
+import { AnimationSidebar, FontFamilySidebar, PropertySidebar, TemplateSidebar } from "@zocket/components/Layout/Sidebar";
 import { exportedProps, maxUndoRedoSteps, originalHeight, originalWidth } from "@zocket/config/app";
 import { defaultFont, defaultFontSize } from "@zocket/config/fonts";
 import { useFabric } from "@zocket/hooks/useFabric";
 import { usePreview } from "@zocket/hooks/usePreview";
-import {
-  Clipboard,
-  FabricCanvas,
-  FabricEvent,
-  FabricObject,
-  FabricSelectedState,
-  FabricStates,
-  FabricStaticCanvas,
-  FabricTextbox,
-  TextboxKeys,
-} from "@zocket/interfaces/fabric";
+import { Scene, SceneObject } from "@zocket/interfaces/animation";
+import { Clipboard, FabricCanvas, FabricEvent, FabricObject, FabricSelectedState, FabricStates, FabricStaticCanvas, FabricTextbox, TextboxKeys } from "@zocket/interfaces/fabric";
 import { addFontFace } from "@zocket/lib/add-font";
 import { fabric as fabricJS } from "fabric";
+import { FabricTemplate, Template } from "@zocket/interfaces/app";
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as uuid from "uuid";
-import "@zocket/config/fabric";
-import { Scene, SceneObject } from "@zocket/interfaces/animation";
 
 const { Textbox, Image } = fabricJS;
 
@@ -33,28 +24,36 @@ export default function App() {
 
   const [scale, setScale] = useState(0.4);
   const [isPreview, setPreview] = useState(false);
-  const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", name: "", details: null });
-  const [clipboard, setClipboard] = useState<Clipboard>(null);
-
   const [actionsEnabled, setActionsEnabled] = useState(true);
+
+  const [template, setTemplate] = useState<Template>(null);
+  const [clipboard, setClipboard] = useState<Clipboard>(null);
+  const [selected, setSelected] = useState<FabricSelectedState>({ status: false, type: "none", name: "", details: null });
+
   const [undoStack, updateUndoStack] = useState<FabricStates>([]);
   const [redoStack, updateRedoStack] = useState<FabricStates>([]);
 
-  const { isOpen: isFontSidebarOpen, onToggle: onFontSidebarToggle, onClose: onFontSidebarClose } = useDisclosure();
-  const { isOpen: isPropertySidebarOpen, onToggle: onPropertySidebarToggle, onClose: onPropertySidebarClose } = useDisclosure();
-  const { isOpen: isAnimationSidebarOpen, onToggle: onAnimationSidebarToggle, onClose: onAnimationSidebarClose } = useDisclosure();
+  console.log(undoStack);
 
-  const image = useRef<HTMLInputElement>(null);
-  const video = useRef<HTMLVideoElement>(null);
+  const canUndo = useMemo(() => actionsEnabled && undoStack.length > 1, [undoStack, actionsEnabled]);
+  const canRedo = useMemo(() => actionsEnabled && redoStack.length > 0, [redoStack, actionsEnabled]);
+
+  const { isOpen: isPropertySidebarOpen, onClose: onPropertySidebarClose, onToggle: onPropertySidebarToggle } = useDisclosure({ defaultIsOpen: true });
+  const { isOpen: isAnimationSidebarOpen, onClose: onAnimationSidebarClose, onToggle: onAnimationSidebarToggle } = useDisclosure({ defaultIsOpen: true });
+  const { isOpen: isTemplateSidebarOpen, onClose: onTemplateSidebarClose, onToggle: onTemplateSidebarToggle } = useDisclosure({ onOpen: () => onFontFamilySidebarClose() });
+  const { isOpen: isFontFamilySidebarOpen, onClose: onFontFamilySidebarClose, onToggle: onFontFamilySidebarToggle } = useDisclosure({ onOpen: () => onTemplateSidebarClose() });
+
+  const isMainCollapsed = useMemo(() => isFontFamilySidebarOpen || isTemplateSidebarOpen, [isFontFamilySidebarOpen, isTemplateSidebarOpen]);
 
   const canvas = useRef<FabricCanvas>(null);
+  const image = useRef<HTMLInputElement>(null);
   const preview = useRef<FabricStaticCanvas>(null);
 
   const initFabric = useFabric({
     ref: canvas,
     state: [...undoStack].pop(),
     callback: () => {
-      onFontSidebarClose();
+      onFontFamilySidebarClose();
       setSelected({ status: false, type: "none", name: "", details: null });
     },
   });
@@ -62,9 +61,6 @@ export default function App() {
   const initPreview = usePreview({
     ref: preview,
   });
-
-  const canUndo = useMemo(() => actionsEnabled && undoStack.length > 1, [undoStack, actionsEnabled]);
-  const canRedo = useMemo(() => actionsEnabled && redoStack.length, [redoStack, actionsEnabled]);
 
   const containerWidth = useMemo(() => originalWidth * scale, [scale]);
   const containerHeight = useMemo(() => originalHeight * scale, [scale]);
@@ -78,8 +74,29 @@ export default function App() {
 
   const clearSelectionState = useCallback(() => {
     setSelected({ status: false, type: "none", name: "", details: null });
-    onFontSidebarClose();
+    onFontFamilySidebarClose();
   }, []);
+
+  const initializeCanvasTemplate = useCallback(
+    (template: FabricTemplate) => {
+      if (!canvas.current) return;
+      canvas.current.clear();
+      updateRedoStack([]);
+      updateUndoStack([]);
+      switch (template.background.type) {
+        case "color":
+          canvas.current.setBackgroundColor(template.background.value, () => {
+            canvas.current!.renderAll();
+          });
+          break;
+        case "image":
+          break;
+        case "video":
+          break;
+      }
+    },
+    [canvas]
+  );
 
   const saveCanvasState = useCallback(
     (_: FabricEvent) => {
@@ -230,7 +247,7 @@ export default function App() {
   }, [canvas, saveCanvasState, updateSelectionState]);
 
   const handleStartPreview = () => {
-    if (!canvas.current || !video.current || !preview.current) return;
+    if (!canvas.current || !preview.current) return;
     const state = onSaveScene();
     for (const object of state) {
       switch (object.type) {
@@ -256,9 +273,9 @@ export default function App() {
     }
     preview.current.requestRenderAll();
     setPreview(true);
-    video.current.play();
-    video.current.onended = () => handleStopPreview();
-    video.current.ontimeupdate = () => console.log(Math.trunc(video.current!.currentTime * 1000), "ms");
+    // video.current.play();
+    // video.current.onended = () => handleStopPreview();
+    // video.current.ontimeupdate = () => console.log(Math.trunc(video.current!.currentTime * 1000), "ms");
   };
 
   const handleAnimation = (element: FabricObject, state: SceneObject) => {
@@ -292,8 +309,8 @@ export default function App() {
 
   const handleStopPreview = () => {
     setPreview(false);
-    video.current!.pause();
-    video.current!.currentTime = 0;
+    // video.current!.pause();
+    // video.current!.currentTime = 0;
     if (preview.current) preview.current.clear();
   };
 
@@ -374,24 +391,20 @@ export default function App() {
   };
 
   const headerComponentMap = {
-    none: <GenericHeader {...{ onAddText, onOpenImageExplorer }} />,
-    textbox: (
-      <TextHeader
-        {...{ selected, isFontSidebarOpen, onFontSidebarToggle, onTextPropertyChange, onPropertySidebarToggle, onAnimationSidebarToggle }}
-      />
-    ),
+    none: <GenericHeader {...{ onAddText, onOpenImageExplorer, onTemplateSidebarToggle }} />,
     image: <ImageHeader {...{ selected, onPropertySidebarToggle, onAnimationSidebarToggle }} />,
+    textbox: <TextHeader {...{ selected, isFontFamilySidebarOpen, onFontFamilySidebarToggle, onTextPropertyChange, onPropertySidebarToggle, onAnimationSidebarToggle }} />,
   };
 
   return (
     <Box display="flex">
-      <FontFamilySidebar selected={selected} onClose={onFontSidebarClose} handleChange={onTextFontChange} isOpen={isFontSidebarOpen} />
+      <FontFamilySidebar selected={selected} onClose={onFontFamilySidebarClose} handleChange={onTextFontChange} isOpen={isFontFamilySidebarOpen} />
+      <TemplateSidebar isOpen={isTemplateSidebarOpen} onClose={onTemplateSidebarClose} handleTemplateChange={initializeCanvasTemplate} />
       <Layout>
         {headerComponentMap[selected.type]}
-        <Main isCollapsed={isFontSidebarOpen}>
+        <Main isCollapsed={isMainCollapsed}>
           <MainContainer>
             <Box height={containerHeight} width={containerWidth} shadow="sm" pos="relative">
-              <Video ref={video} src="/sample-video.mp4" />
               <CanvasContainer transform={transform} display={isPreview ? "none" : "block"}>
                 <canvas ref={initFabric} />
                 <Input type="file" ref={image} accept="images/*" display="none" onChange={handleImageInputChange} onClick={onFileInputClick} />
@@ -401,44 +414,12 @@ export default function App() {
               </CanvasContainer>
             </Box>
           </MainContainer>
-          <PropertySidebar
-            canvas={canvas.current}
-            isOpen={isPropertySidebarOpen}
-            onClose={onPropertySidebarClose}
-            {...{ selected, onTextPropertyChange }}
-          />
+          <PropertySidebar canvas={canvas.current} isOpen={isPropertySidebarOpen} onClose={onPropertySidebarClose} {...{ selected, onTextPropertyChange }} />
           <AnimationSidebar canvas={canvas.current} isOpen={isAnimationSidebarOpen} onClose={onAnimationSidebarClose} {...{ selected }} />
         </Main>
-        <Footer>
-          {isPreview ? (
-            <Button variant="solid" onClick={handleStopPreview} colorScheme="purple" leftIcon={<Icon as={PauseIcon} fontSize="xl" />}>
-              Stop Preview
-            </Button>
-          ) : (
-            <Button onClick={handleStartPreview} variant="solid" colorScheme="purple" leftIcon={<Icon as={PlayIcon} fontSize="xl" />}>
-              Start Preview
-            </Button>
-          )}
-          <HStack ml="auto">
-            <HStack spacing={2} mr={8}>
-              <Button variant="ghost" fontWeight={600}>
-                {Math.floor(scale * 100)}%
-              </Button>
-              <Slider value={scale} onChange={setScale} min={0.1} step={0.01} max={2} aria-label="zoom" w={48} defaultValue={30}>
-                <SliderTrack bgColor="#EEEEEE">
-                  <SliderFilledTrack bgColor="#AAAAAA" />
-                </SliderTrack>
-                <SliderThumb bgColor="#000000" />
-              </Slider>
-            </HStack>
-            <Button variant="outline" isDisabled={!canUndo} onClick={undoCanvasState} leftIcon={<Icon as={ArrowUturnLeftIcon} />}>
-              Undo
-            </Button>
-            <Button variant="outline" isDisabled={!canRedo} onClick={redoCanvasState} rightIcon={<Icon as={ArrowUturnRightIcon} />}>
-              Redo
-            </Button>
-          </HStack>
-        </Footer>
+        <Footer
+          {...{ scale, canRedo, canUndo, isPreview, handleRedo: redoCanvasState, handleUndo: undoCanvasState, onScaleChange: setScale, handleStartPreview, handleStopPreview }}
+        />
       </Layout>
     </Box>
   );
@@ -466,15 +447,6 @@ const Layout = styled.div`
   height: 100vh;
   flex: 1;
   flex-direction: column;
-`;
-
-const Footer = styled.footer`
-  height: 80px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  border-top: 1px solid #dddddd;
-  background-color: #ffffff;
 `;
 
 const Video = styled.video`

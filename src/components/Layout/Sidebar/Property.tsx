@@ -1,9 +1,11 @@
-import { Box, Button, HStack, Icon, IconButton, Text, VStack } from "@chakra-ui/react";
+import { useMemo } from "react";
 import styled from "@emotion/styled";
 import { ChevronDoubleRightIcon } from "@heroicons/react/24/solid";
+import { MiddleAlignIcon } from "@zocket/components/Icons/MiddleAlign";
 import { PropertyInput, RotateInput } from "@zocket/components/Input";
+import { Box, Button, HStack, Icon, IconButton, Text, VStack } from "@chakra-ui/react";
 import { FabricCanvas, FabricSelectedState, ObjectKeys } from "@zocket/interfaces/fabric";
-import { useMemo } from "react";
+import { CenterAlignIcon } from "@zocket/components/Icons/CenterAlign";
 
 interface PropertySidebar {
   isOpen: boolean;
@@ -15,14 +17,6 @@ interface PropertySidebar {
 
 export default function PropertySidebar({ isOpen, canvas, selected, onClose, onTextPropertyChange }: PropertySidebar) {
   const isText = useMemo(() => (selected.details ? selected.details.type === "textbox" : false), [selected]);
-
-  const handleViewportCenter = () => {
-    if (!canvas) return;
-    const element = canvas.getActiveObject()!;
-    canvas.viewportCenterObject(element);
-    element.setCoords();
-    canvas.fire("object:modified", { target: element });
-  };
 
   const handleViewportHCenter = () => {
     if (!canvas) return;
@@ -91,13 +85,7 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
         </Text>
         <VStack spacing={4} mt={2} alignItems="stretch">
           <PropertyInput left="W" right="px" value={selected.details.width * selected.details.scaleX} onChange={handleDimensionChange("width")} />
-          <PropertyInput
-            isDisabled={isText}
-            left="H"
-            right="px"
-            value={selected.details.height * selected.details.scaleY}
-            onChange={handleDimensionChange("height")}
-          />
+          <PropertyInput isDisabled={isText} left="H" right="px" value={selected.details.height * selected.details.scaleY} onChange={handleDimensionChange("height")} />
         </VStack>
       </Box>
       <Box mt={6}>
@@ -106,11 +94,19 @@ export default function PropertySidebar({ isOpen, canvas, selected, onClose, onT
         </Text>
         <RotateInput value={selected.details.angle} onChange={onTextPropertyChange("angle")} mt={2} />
       </Box>
-      <VStack alignItems="stretch" spacing={4} mt={8}>
-        <Button onClick={handleViewportCenter}>Viewport Center</Button>
-        <Button onClick={handleViewportHCenter}>Viewport Horizontal Center</Button>
-        <Button onClick={handleViewportVCenter}>Viewport Vertical Center</Button>
-      </VStack>
+      <Box mt={6}>
+        <Text textAlign="center" fontWeight="600">
+          Viewport Align
+        </Text>
+        <HStack spacing={2} mt={2}>
+          <Button fontWeight={500} width="full" variant="outline" leftIcon={<Icon as={MiddleAlignIcon} />} onClick={handleViewportVCenter}>
+            Middle
+          </Button>
+          <Button fontWeight={500} width="full" variant="outline" leftIcon={<Icon as={CenterAlignIcon} />} onClick={handleViewportHCenter}>
+            Center
+          </Button>
+        </HStack>
+      </Box>
     </Sidebar>
   );
 }
