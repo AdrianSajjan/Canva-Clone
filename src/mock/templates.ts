@@ -18,6 +18,7 @@ export const templates: Array<FabricTemplate> = [
   {
     index: "2",
     source: "/templates/video/template-1.mp4",
+    thumbnail: "/templates/video/template-1.png",
     background: "video",
     state: [
       {
