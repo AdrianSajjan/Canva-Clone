@@ -77,21 +77,23 @@ export default function App() {
   }, []);
 
   const initializeCanvasBackground = useCallback((canvas: NonNullable<FabricCanvas | FabricStaticCanvas>, template: FabricTemplate, preview?: boolean) => {
-    switch (template.background.type) {
+    switch (template.background) {
       case "color":
-        canvas.setBackgroundColor(template.background.value, canvas.renderAll.bind(canvas));
+        canvas.setBackgroundColor(template.source, canvas.renderAll.bind(canvas));
         return;
       case "image":
-        canvas.setBackgroundImage(template.background.value, canvas.renderAll.bind(canvas));
+        canvas.setBackgroundImage(template.source, canvas.renderAll.bind(canvas));
         return;
       case "video":
         if (!video.current) return;
-        video.current.src = template.background.value;
+        if (template.thumbnail) video.current.poster = template.thumbnail;
+        video.current.src = template.source;
         video.current.currentTime = 0.1;
         video.current.load();
         if (!preview) {
           video.current.style.display = "block";
         } else {
+          video.current.style.display = "none";
           const element = new Image(video.current!, { name: uuid.v4(), objectCaching: false, height: 1920, width: 1080, selectable: false });
           canvas.add(element);
           fabricJS.util.requestAnimFrame(function render() {

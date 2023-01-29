@@ -1,13 +1,11 @@
 export type Template = FabricTemplate | undefined | null;
 
 export interface FabricTemplate {
-  background: TemplateBackground;
+  index: string;
+  source: string;
+  thumbnail?: string;
+  background: "image" | "color" | "video";
   state: Array<TemplateState>;
-}
-
-export interface TemplateBackground {
-  type: "image" | "color" | "video";
-  value: string;
 }
 
 export interface TemplateState {

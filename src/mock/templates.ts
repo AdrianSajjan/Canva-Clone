@@ -3,10 +3,9 @@ import * as uuid from "uuid";
 
 export const templates: Array<FabricTemplate> = [
   {
-    background: {
-      type: "image",
-      value: "/sample-image.webp",
-    },
+    index: "1",
+    source: "/templates/video/template-2.webp",
+    background: "image",
     state: [
       {
         name: uuid.v4(),
@@ -17,10 +16,9 @@ export const templates: Array<FabricTemplate> = [
     ],
   },
   {
-    background: {
-      type: "video",
-      value: "/sample-video.mp4",
-    },
+    index: "2",
+    source: "/templates/video/template-1.mp4",
+    background: "video",
     state: [
       {
         name: uuid.v4(),
